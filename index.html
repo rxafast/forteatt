@@ -107,7 +107,7 @@
             <div id="form-teacher" class="p-6 space-y-4">
                 <input type="text" id="login-teacher-email" class="w-full border p-3 rounded text-sm" placeholder="Username / Email">
                 <input type="password" id="login-teacher-pass" class="w-full border p-3 rounded text-sm" placeholder="Password">
-                <button onclick="window.verifyTeacher()" id="btn-login-teacher" disabled class="w-full bg-blue-600 opacity-50 cursor-not-allowed hover:bg-blue-700 text-white font-bold py-3 rounded shadow transition">Wait...</button>
+                <button onclick="window.handleLogin('teacher')" id="btn-login-teacher" disabled class="w-full bg-blue-600 opacity-50 cursor-not-allowed hover:bg-blue-700 text-white font-bold py-3 rounded shadow transition">Wait...</button>
                 <div id="class-select-area" class="hidden pt-4 border-t">
                     <label class="block text-xs font-bold text-gray-600 mb-1">Select Class</label>
                     <select id="login-class-select" class="w-full border p-3 rounded text-sm mb-3"></select>
@@ -119,7 +119,7 @@
             <div id="form-admin" class="p-6 space-y-4 hidden">
                 <input type="email" id="login-admin-email" class="w-full border p-3 rounded text-sm" placeholder="admin@forte.com">
                 <input type="password" id="login-admin-pass" class="w-full border p-3 rounded text-sm" placeholder="Password">
-                <button onclick="window.adminLogin()" id="btn-login-admin" disabled class="w-full bg-gray-800 opacity-50 cursor-not-allowed hover:bg-gray-900 text-white font-bold py-3 rounded shadow transition">Wait...</button>
+                <button onclick="window.handleLogin('admin')" id="btn-login-admin" disabled class="w-full bg-gray-800 opacity-50 cursor-not-allowed hover:bg-gray-900 text-white font-bold py-3 rounded shadow transition">Wait...</button>
                 <div class="text-center">
                     <button onclick="window.forgotPassword()" class="text-xs text-blue-500 hover:underline">Forgot Password?</button>
                 </div>
@@ -181,7 +181,7 @@
                                 </tr>
                             </thead>
                             <tbody id="admin-live-table">
-                                <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Connecting to live feeds...</td></tr>
+                                <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Connecting...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -216,14 +216,19 @@
                     <button onclick="window.switchAdminSection('dashboard')" class="text-sm text-gray-500 hover:text-gray-800">Back</button>
                 </div>
                 
-                <!-- Add Teacher Form -->
-                <div class="bg-white p-4 rounded shadow">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                        <input type="text" id="new-teacher-name" placeholder="Name (e.g. Sir Ali)" class="border p-2 rounded text-sm">
+                <div class="bg-white p-4 rounded shadow border-l-4 border-blue-600">
+                    <h3 class="font-bold text-sm text-gray-700 mb-3">Create Teacher</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <input type="text" id="new-teacher-name" placeholder="Full Name" class="border p-2 rounded text-sm">
                         <input type="text" id="new-teacher-email" placeholder="Login Email" class="border p-2 rounded text-sm">
-                        <input type="text" id="new-teacher-pass" placeholder="Password" class="border p-2 rounded text-sm">
+                        <input type="text" id="new-teacher-pass" placeholder="Password (min 6 chars)" class="border p-2 rounded text-sm">
+                        <select id="new-teacher-class" class="border p-2 rounded text-sm bg-white">
+                            <option value="">Select Primary Class (Optional)</option>
+                        </select>
                     </div>
-                    <button onclick="window.adminAddTeacher()" class="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"><i class="fas fa-plus mr-1"></i> Register New Teacher</button>
+                    <button onclick="window.adminAddTeacher()" class="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
+                        <i class="fas fa-user-plus mr-1"></i> Create User & Save
+                    </button>
                 </div>
 
                 <div id="admin-teacher-list" class="space-y-3"></div>
@@ -257,42 +262,32 @@
                         </div>
                     </div>
                 </div>
-                <!-- Dynamic Subject List Container -->
                 <div id="admin-subject-list" class="space-y-4"></div>
             </div>
 
             <!-- SECTION: REPORTS -->
             <div id="admin-section-reports" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-file-alt mr-2 text-orange-600"></i>Master Reports</h2>
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-file-alt mr-2 text-orange-600"></i>Reports</h2>
                     <button onclick="window.switchAdminSection('dashboard')" class="text-sm text-gray-500 hover:text-gray-800">Back</button>
                 </div>
-                
-                <!-- View/Manage Class Report -->
                 <div class="bg-white p-4 rounded shadow border border-gray-200 mb-4">
-                    <h3 class="font-bold text-gray-700 mb-2">View & Manage Class Attendance</h3>
-                    <p class="text-xs text-gray-500 mb-3">Open the full attendance sheet for editing or viewing.</p>
+                    <h3 class="font-bold text-gray-700 mb-2">View Class</h3>
                     <div class="flex gap-2">
                         <select id="report-class-select" class="flex-1 border p-2 rounded text-sm"></select>
-                        <button onclick="window.adminViewClass(document.getElementById('report-class-select').value)" class="bg-orange-600 text-white px-4 py-1 rounded text-sm hover:bg-orange-700">Open Class</button>
+                        <button onclick="window.adminViewClass(document.getElementById('report-class-select').value)" class="bg-orange-600 text-white px-4 py-1 rounded text-sm hover:bg-orange-700">Open</button>
                     </div>
                 </div>
-                
-                <!-- Direct CSV Download -->
                 <div class="bg-white p-4 rounded shadow border border-gray-200 mb-4">
-                    <h3 class="font-bold text-gray-700 mb-2">Monthly Class Report (CSV)</h3>
-                    <p class="text-xs text-gray-500 mb-3">Download full attendance sheet for a class.</p>
+                    <h3 class="font-bold text-gray-700 mb-2">Monthly CSV</h3>
                     <div class="flex gap-2">
                         <select id="admin-rep-class" class="flex-1 border p-2 rounded text-sm"></select>
                         <input type="month" id="admin-rep-month" class="border p-2 rounded text-sm">
                         <button onclick="window.adminDownloadMonthlyReport()" class="bg-blue-600 text-white px-4 py-1 rounded text-sm hover:bg-blue-700">Download</button>
                     </div>
                 </div>
-
-                <!-- Daily Summary -->
                 <div class="bg-white p-4 rounded shadow border border-gray-200">
-                    <h3 class="font-bold text-gray-700 mb-2">Daily College Summary (CSV)</h3>
-                    <p class="text-xs text-gray-500 mb-3">Overview of all classes for a specific date.</p>
+                    <h3 class="font-bold text-gray-700 mb-2">Daily Summary CSV</h3>
                     <div class="flex gap-2">
                         <input type="date" id="admin-rep-date" class="flex-1 border p-2 rounded text-sm">
                         <button onclick="window.adminDownloadDailySummary()" class="bg-green-600 text-white px-4 py-1 rounded text-sm hover:bg-green-700">Download</button>
@@ -427,7 +422,7 @@
     <!-- 2. LOGIC MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -453,18 +448,13 @@
         // --- DEFINITIONS FIRST ---
 
         async function updateConfig() {
+            if(!auth.currentUser) return alert("You are not logged in.");
             try {
-                // If the user has strict rules, this write might fail if they are an "Anonymous" admin.
-                // We will catch that specific error below.
                 const ref = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data');
                 await setDoc(ref, window.schoolData);
             } catch (error) {
                 console.error("Save failed:", error);
-                if(error.code === 'permission-denied') {
-                     alert("Session Expired: You do not have permission to save changes. Please logout and login as Admin again.");
-                } else {
-                     alert("Cloud Save Failed: " + error.message);
-                }
+                alert("Cloud Save Failed: " + error.message);
             }
         }
 
@@ -503,11 +493,6 @@
                 if(!document.getElementById('view-admin').classList.contains('hidden')) {
                     window.renderAdminPanel();
                     window.initAdminLiveDashboard(); 
-                }
-                
-                // REFRESH TEACHER VIEW IF ACTIVE
-                if (window.currentClassId && !document.getElementById('view-daily').classList.contains('hidden')) {
-                    window.handleDateChange(); 
                 }
             });
         };
@@ -980,67 +965,114 @@
             btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save to Cloud';
         };
 
-        // --- ADMIN ---
-        window.adminLogin = async () => {
-            const e = document.getElementById('login-admin-email').value.trim();
-            const p = document.getElementById('login-admin-pass').value.trim();
-            if(!e || !p) return alert("Enter credentials");
+        // --- NEW LOGIN HANDLER ---
+        window.handleLogin = async (type) => {
+            const email = document.getElementById(`login-${type}-email`).value.trim();
+            const pass = document.getElementById(`login-${type}-pass`).value.trim();
+            
+            if(!email || !pass) return alert("Please fill all fields");
+            
+            const btn = document.getElementById(`btn-login-${type}`);
+            const originalText = btn.innerText;
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
+
             try {
-                await signInWithEmailAndPassword(auth, e, p);
-                localStorage.setItem('fcs_role', 'admin');
-                window.checkSession();
-            } catch(err) { alert(err.message); }
+                // 1. Authenticate with Firebase
+                await signInWithEmailAndPassword(auth, email, pass);
+                
+                // 2. Determine Role & Route
+                if (type === 'admin') {
+                    // Admin logic
+                    localStorage.setItem('fcs_role', 'admin');
+                    window.checkSession();
+                } else {
+                    // Teacher logic: Must match an entry in School Data
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'));
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const teachers = data.teachers || [];
+                        const teacher = teachers.find(t => t.email.toLowerCase() === email.toLowerCase());
+                        
+                        if (teacher) {
+                            // Populate Class Select
+                            const select = document.getElementById('login-class-select');
+                            select.innerHTML = '';
+                            if(teacher.assignedClasses && teacher.assignedClasses.length > 0) {
+                                teacher.assignedClasses.forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
+                                document.getElementById('class-select-area').classList.remove('hidden');
+                                window.tempTeacherName = teacher.name;
+                            } else {
+                                alert("Login successful, but no classes assigned. Contact Admin.");
+                            }
+                        } else {
+                            alert("This email is not in the Teacher List. Contact Admin.");
+                            await signOut(auth);
+                        }
+                    } else {
+                        alert("System Error: Could not load school data.");
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                let msg = "Login Failed: " + error.message;
+                if(error.code === 'auth/invalid-credential') msg = "Incorrect Email or Password";
+                alert(msg);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
         };
 
-        window.verifyTeacher = () => {
-            if(!window.dataLoaded) return alert("System loading...");
-            const e = document.getElementById('login-teacher-email').value.trim().toLowerCase();
-            const p = document.getElementById('login-teacher-pass').value.trim();
-            const t = schoolData.teachers.find(x => (x.email.toLowerCase()===e || x.name.toLowerCase()===e) && x.password===p);
-            if(t) {
-                const s = document.getElementById('login-class-select');
-                s.innerHTML = '';
-                if(t.assignedClasses && t.assignedClasses.length) {
-                    t.assignedClasses.forEach(c => s.innerHTML += `<option>${c}</option>`);
-                    document.getElementById('class-select-area').classList.remove('hidden');
-                    window.tempTeacherName = t.name;
-                } else alert("No assigned classes.");
-            } else alert("Invalid credentials.");
-        };
-
-        window.enterClass = () => {
-            const cls = document.getElementById('login-class-select').value;
-            localStorage.setItem('fcs_role', 'teacher');
-            localStorage.setItem('fcs_class', cls);
-            localStorage.setItem('fcs_teacher', window.tempTeacherName);
-            window.checkSession();
-        };
-
-        window.adminCreateClass = async () => {
-            const name = document.getElementById('new-class-name').value.toUpperCase();
-            if(!name) return;
-            schoolData.classes.push(name);
-            await updateConfig();
-            document.getElementById('new-class-name').value = '';
-            renderAdminPanel();
-        };
-
+        // --- ADMIN: ADD TEACHER WITH FIREBASE AUTH ---
         window.adminAddTeacher = async () => {
-            const name = document.getElementById('new-teacher-name').value;
-            const email = document.getElementById('new-teacher-email').value;
-            const pass = document.getElementById('new-teacher-pass').value;
-            if(!name || !email || !pass) return;
-            schoolData.teachers.push({name, email, password: pass, assignedClasses: []});
+            const name = document.getElementById('new-teacher-name').value.trim();
+            const email = document.getElementById('new-teacher-email').value.trim();
+            const pass = document.getElementById('new-teacher-pass').value.trim();
+            const cls = document.getElementById('new-teacher-class').value;
+
+            if(!name || !email || !pass) return alert("Fill all fields");
+
+            const btn = document.querySelector('button[onclick="window.adminAddTeacher()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            btn.disabled = true;
+
+            // 1. Create Auth User (Using Secondary App Trick)
+            try {
+                const tempApp = initializeApp(firebaseConfig, "Secondary");
+                const tempAuth = getAuth(tempApp);
+                
+                await createUserWithEmailAndPassword(tempAuth, email, pass);
+                await signOut(tempAuth); // Sign out immediately
+                
+            } catch(e) {
+                alert("Error creating login: " + e.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            // 2. Save to Firestore
+            const assigned = cls ? [cls] : [];
+            window.schoolData.teachers.push({name, email, password: pass, assignedClasses: assigned}); // Password stored just for ref
             await updateConfig();
+            
             document.getElementById('new-teacher-name').value = '';
             document.getElementById('new-teacher-email').value = '';
             document.getElementById('new-teacher-pass').value = '';
-            renderAdminPanel();
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            window.renderAdminPanel();
+            alert("Teacher Created Successfully!");
         };
-        
+
+        // --- ADMIN SUBJECT MANAGEMENT (RESTORED) ---
         window.adminAddGlobalSubject = async () => {
-            const name = document.getElementById('new-subject-name').value.toUpperCase();
+            const name = document.getElementById('new-subject-name').value.toUpperCase().trim();
             if(!name) return;
+            if(!window.schoolData.subjects) window.schoolData.subjects = [];
             if(window.schoolData.subjects.includes(name)) return alert("Already exists in Global");
             window.schoolData.subjects.push(name);
             await updateConfig();
@@ -1511,6 +1543,26 @@
                 r.readAsDataURL(input.files[0]);
             }
         };
+        
+        // --- ADD MISSING LOGOUT / ENTER CLASS ---
+        window.logout = async () => {
+            if(confirm("Log out?")) {
+                localStorage.clear();
+                await signOut(auth);
+                location.reload();
+            }
+        };
+
+        window.enterClass = () => {
+            const cls = document.getElementById('login-class-select').value;
+            localStorage.setItem('fcs_role', 'teacher');
+            localStorage.setItem('fcs_class', cls);
+            localStorage.setItem('fcs_teacher', window.tempTeacherName);
+            window.checkSession();
+        };
+
+        window.verifyTeacher = () => window.handleLogin('teacher');
+        window.adminLogin = () => window.handleLogin('admin');
 
         // --- INIT ---
         const d = new Date().toISOString().split('T')[0];
@@ -1546,7 +1598,7 @@
                 window.loadSchoolConfig();
                 window.checkSession();
             } else {
-                signInAnonymously(auth).catch(e => alert(e.message));
+                // If not logged in, we don't do anything special here as per request
             }
         });
     </script>
