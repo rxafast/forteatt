@@ -10,9 +10,11 @@
     <!-- 1. UI HELPERS (Runs Immediately) -->
     <script>
         window.onerror = function(msg, url, line) {
-            console.error("Global Error:", msg, line);
-            // Optional: Alert user if critical
-            // alert("Error: " + msg); 
+            const el = document.getElementById('error-console');
+            if(el) {
+                el.style.display = 'block';
+                el.innerHTML += `<div>[ERROR] ${msg} (Line ${line})</div>`;
+            }
             return false;
         };
 
@@ -46,13 +48,13 @@
             const aForm = document.getElementById('form-admin');
 
             if(tab === 'teacher') {
-                if(tBtn) { tBtn.className = "text-blue-600 border-b-2 border-blue-600 pb-1 transition cursor-pointer"; }
-                if(aBtn) { aBtn.className = "text-gray-400 hover:text-gray-600 pb-1 transition cursor-pointer"; }
+                if(tBtn) { tBtn.classList.add('text-blue-600', 'border-blue-600'); tBtn.classList.remove('text-gray-400'); }
+                if(aBtn) { aBtn.classList.remove('text-blue-600', 'border-blue-600'); aBtn.classList.add('text-gray-400'); }
                 if(tForm) tForm.classList.remove('hidden'); 
                 if(aForm) aForm.classList.add('hidden');
             } else {
-                if(aBtn) { aBtn.className = "text-blue-600 border-b-2 border-blue-600 pb-1 transition cursor-pointer"; }
-                if(tBtn) { tBtn.className = "text-gray-400 hover:text-gray-600 pb-1 transition cursor-pointer"; }
+                if(aBtn) { aBtn.classList.add('text-blue-600', 'border-blue-600'); aBtn.classList.remove('text-gray-400'); }
+                if(tBtn) { tBtn.classList.remove('text-blue-600', 'border-blue-600'); tBtn.classList.add('text-gray-400'); }
                 if(aForm) aForm.classList.remove('hidden'); 
                 if(tForm) tForm.classList.add('hidden');
             }
@@ -75,6 +77,7 @@
         .toggle-btn { font-size: 0.75rem; padding: 4px 8px; border-radius: 9999px; border: 1px solid; transition: all 0.2s; cursor: pointer; }
         .toggle-active { background-color: #ebf8ff; border-color: #3182ce; color: #2c5282; font-weight: 600; }
         .toggle-inactive { background-color: #f7fafc; border-color: #cbd5e0; color: #a0aec0; text-decoration: line-through; }
+        #error-console { position: fixed; bottom: 0; left: 0; right: 0; background: #fee2e2; color: #991b1b; padding: 10px; font-size: 12px; font-family: monospace; display: none; z-index: 10000; border-top: 2px solid #ef4444; max-height: 200px; overflow: auto; }
         
         /* Admin Dashboard Cards */
         .dash-card { background: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; transition: transform 0.2s; border: 1px solid #e5e7eb; }
@@ -84,6 +87,7 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800">
 
+    <div id="error-console"></div>
     <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-gray-800/90 text-white px-6 py-3 rounded-full shadow-xl translate-y-[-150%] transition-transform duration-300 z-50 text-sm font-medium backdrop-blur-sm pointer-events-none">Action Saved</div>
 
     <!-- LOGIN OVERLAY -->
@@ -92,7 +96,7 @@
             <div class="p-6 text-center bg-blue-50 border-b relative">
                 <i class="fas fa-university text-4xl text-blue-800 mb-2"></i>
                 <h1 class="text-xl font-bold text-gray-800">Forte College</h1>
-                <p id="sys-status" class="text-xs text-orange-500 font-bold mt-1">Ready to Login</p>
+                <p id="sys-status" class="text-xs text-orange-500 font-bold mt-1">Connecting...</p>
                 <div class="flex justify-center gap-4 mt-4 text-sm font-medium">
                     <button onclick="window.showLoginTab('teacher')" id="tab-teacher" class="text-blue-600 border-b-2 border-blue-600 pb-1 transition">Teacher</button>
                     <button onclick="window.showLoginTab('admin')" id="tab-admin" class="text-gray-400 hover:text-gray-600 pb-1 transition">Admin</button>
@@ -103,8 +107,7 @@
             <div id="form-teacher" class="p-6 space-y-4">
                 <input type="text" id="login-teacher-email" class="w-full border p-3 rounded text-sm" placeholder="Username / Email">
                 <input type="password" id="login-teacher-pass" class="w-full border p-3 rounded text-sm" placeholder="Password">
-                <!-- Enabled by default -->
-                <button onclick="window.verifyTeacher()" id="btn-login-teacher" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow transition">Login</button>
+                <button onclick="window.handleLogin('teacher')" id="btn-login-teacher" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded shadow transition">Login</button>
                 
                 <div id="class-select-area" class="hidden pt-4 border-t">
                     <label class="block text-xs font-bold text-gray-600 mb-1">Select Class</label>
@@ -117,8 +120,7 @@
             <div id="form-admin" class="p-6 space-y-4 hidden">
                 <input type="email" id="login-admin-email" class="w-full border p-3 rounded text-sm" placeholder="admin@forte.com">
                 <input type="password" id="login-admin-pass" class="w-full border p-3 rounded text-sm" placeholder="Password">
-                <!-- Enabled by default -->
-                <button onclick="window.adminLogin()" id="btn-login-admin" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded shadow transition">Login as Admin</button>
+                <button onclick="window.handleLogin('admin')" id="btn-login-admin" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded shadow transition">Login as Admin</button>
                 <div class="text-center">
                     <button onclick="window.forgotPassword()" class="text-xs text-blue-500 hover:underline">Forgot Password?</button>
                 </div>
@@ -126,7 +128,7 @@
         </div>
     </div>
 
-    <!-- ADMIN PANEL -->
+    <!-- ADMIN PANEL (NEW COMMAND CENTER) -->
     <div id="view-admin" class="fixed inset-0 bg-gray-50 z-40 hidden flex flex-col overflow-hidden">
         <header class="bg-gray-900 text-white p-4 shadow flex justify-between items-center z-10">
             <div class="flex items-center gap-3">
@@ -211,6 +213,7 @@
                     <button onclick="window.switchAdminSection('dashboard')" class="text-sm text-gray-500 hover:text-gray-800">Back</button>
                 </div>
                 
+                <!-- Add Teacher Form -->
                 <div class="bg-white p-4 rounded shadow border-l-4 border-blue-600">
                     <h3 class="font-bold text-sm text-gray-700 mb-3">Create Teacher</h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -489,6 +492,12 @@
                 allSubjects = window.schoolData.subjects;
                 allSubjects.forEach(s => { if(activeSubjects[s] === undefined) activeSubjects[s] = true; });
 
+                window.dataLoaded = true;
+                const btnT = document.getElementById('btn-login-teacher');
+                const btnA = document.getElementById('btn-login-admin');
+                if(btnT) { btnT.disabled=false; btnT.innerText="Login"; btnT.classList.remove('opacity-50'); }
+                if(btnA) { btnA.disabled=false; btnA.innerText="Dashboard Login"; btnA.classList.remove('opacity-50'); }
+                
                 if(!document.getElementById('view-admin').classList.contains('hidden')) {
                     window.renderAdminPanel();
                     window.initAdminLiveDashboard(); 
@@ -1054,35 +1063,6 @@
                 input.value = '';
             };
             reader.readAsText(file);
-        };
-        
-        window.forgotPassword = () => {
-            const email = document.getElementById('login-admin-email').value.trim();
-            if(!email) { alert("Enter Admin Email"); return; }
-            sendPasswordResetEmail(auth, email).then(()=>alert("Reset email sent")).catch(e=>alert(e.message));
-        };
-        
-        window.switchTab = (t) => {
-             ['daily','report','students'].forEach(id => {
-                 document.getElementById(`view-${id}`).classList.add('hidden');
-                 document.getElementById(`btn-${id}`).classList.replace('border-blue-500', 'border-transparent');
-             });
-             document.getElementById(`view-${t}`).classList.remove('hidden');
-             document.getElementById(`btn-${t}`).classList.replace('border-transparent', 'border-blue-500');
-             if(t==='report') window.generateReport();
-        };
-
-        window.uploadLogo = (input) => {
-            if (input.files && input.files[0]) {
-                const r = new FileReader();
-                r.onload = (e) => {
-                    localStorage.setItem('att_logo_img', e.target.result);
-                    document.getElementById('app-logo').src = e.target.result;
-                    document.getElementById('app-logo').classList.remove('hidden');
-                    document.getElementById('default-logo-icon').classList.add('hidden');
-                };
-                r.readAsDataURL(input.files[0]);
-            }
         };
         
         // --- ADD MISSING LOGOUT / ENTER CLASS ---
