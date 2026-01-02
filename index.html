@@ -181,7 +181,7 @@
                                 </tr>
                             </thead>
                             <tbody id="admin-live-table">
-                                <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Connecting...</td></tr>
+                                <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Connecting to live feeds...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -212,19 +212,14 @@
                     <button onclick="window.switchAdminSection('dashboard')" class="text-sm text-gray-500 hover:text-gray-800">Back</button>
                 </div>
                 
-                <div class="bg-white p-4 rounded shadow border-l-4 border-blue-600">
-                    <h3 class="font-bold text-sm text-gray-700 mb-3">Create Teacher</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                        <input type="text" id="new-teacher-name" placeholder="Full Name" class="border p-2 rounded text-sm">
+                <!-- Add Teacher Form -->
+                <div class="bg-white p-4 rounded shadow">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                        <input type="text" id="new-teacher-name" placeholder="Name (e.g. Sir Ali)" class="border p-2 rounded text-sm">
                         <input type="text" id="new-teacher-email" placeholder="Login Email" class="border p-2 rounded text-sm">
-                        <input type="text" id="new-teacher-pass" placeholder="Password (min 6 chars)" class="border p-2 rounded text-sm">
-                        <select id="new-teacher-class" class="border p-2 rounded text-sm bg-white">
-                            <option value="">Select Primary Class (Optional)</option>
-                        </select>
+                        <input type="text" id="new-teacher-pass" placeholder="Password" class="border p-2 rounded text-sm">
                     </div>
-                    <button onclick="window.adminAddTeacher()" class="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700">
-                        <i class="fas fa-user-plus mr-1"></i> Create User & Save
-                    </button>
+                    <button onclick="window.adminAddTeacher()" class="w-full bg-blue-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-blue-700"><i class="fas fa-plus mr-1"></i> Register New Teacher</button>
                 </div>
 
                 <div id="admin-teacher-list" class="space-y-3"></div>
@@ -265,7 +260,7 @@
             <!-- SECTION: REPORTS -->
             <div id="admin-section-reports" class="hidden space-y-4">
                 <div class="flex justify-between items-center border-b pb-2">
-                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-file-alt mr-2 text-orange-600"></i>Reports</h2>
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fas fa-file-alt mr-2 text-orange-600"></i>Master Reports</h2>
                     <button onclick="window.switchAdminSection('dashboard')" class="text-sm text-gray-500 hover:text-gray-800">Back</button>
                 </div>
                 
@@ -452,44 +447,6 @@
         let liveDashboardUnsubs = []; // Store unsubs for dashboard
 
         // --- DEFINITIONS FIRST ---
-        
-        // ** MOVE checkSession TO TOP SO IT IS DEFINED BEFORE CALL **
-        window.checkSession = function() {
-            const r = localStorage.getItem('fcs_role');
-            const c = localStorage.getItem('fcs_class');
-            const t = localStorage.getItem('fcs_teacher');
-            const v = localStorage.getItem('fcs_admin_view_class');
-
-            if(r === 'admin') {
-                window.safeClassList('login-overlay', 'add', 'hidden');
-                window.safeClassList('admin-badge', 'remove', 'hidden');
-                window.currentUserRole = 'admin';
-                
-                // Security Check
-                const u = auth.currentUser;
-                if(u && u.isAnonymous) {
-                     alert("Security Check: Admin session expired. Please login again.");
-                     localStorage.removeItem('fcs_role');
-                     location.reload();
-                     return;
-                }
-
-                if(v) window.adminViewClass(v);
-                else {
-                    window.safeClassList('view-admin', 'remove', 'hidden');
-                    window.switchAdminSection('dashboard'); 
-                    if(window.schoolData.classes.length > 0) window.renderAdminPanel();
-                }
-            } else if (r === 'teacher' && c) {
-                window.safeClassList('login-overlay', 'add', 'hidden');
-                window.safeClassList('main-app', 'remove', 'hidden');
-                window.currentClassId = c;
-                window.teacherName = t;
-                document.getElementById('header-class-name').innerText = c;
-                document.getElementById('teacher-display').innerText = "Teacher: "+t;
-                window.initClassData(c);
-            }
-        };
 
         async function updateConfig() {
             if(!auth.currentUser) return alert("You are not logged in.");
@@ -498,11 +455,7 @@
                 await setDoc(ref, window.schoolData);
             } catch (error) {
                 console.error("Save failed:", error);
-                if(error.code === 'permission-denied') {
-                     alert("Session Expired: You do not have permission to save changes. Please logout and login as Admin again.");
-                } else {
-                     alert("Cloud Save Failed: " + error.message);
-                }
+                alert("Cloud Save Failed: " + error.message);
             }
         }
 
@@ -533,11 +486,6 @@
                 allSubjects.forEach(s => { if(activeSubjects[s] === undefined) activeSubjects[s] = true; });
 
                 window.dataLoaded = true;
-                const btnT = document.getElementById('btn-login-teacher');
-                const btnA = document.getElementById('btn-login-admin');
-                if(btnT) { btnT.disabled=false; btnT.innerText="Login"; btnT.classList.remove('opacity-50'); }
-                if(btnA) { btnA.disabled=false; btnA.innerText="Dashboard Login"; btnA.classList.remove('opacity-50'); }
-                
                 if(!document.getElementById('view-admin').classList.contains('hidden')) {
                     window.renderAdminPanel();
                     window.initAdminLiveDashboard(); 
@@ -1105,34 +1053,25 @@
             reader.readAsText(file);
         };
         
-        window.forgotPassword = () => {
-            const email = document.getElementById('login-admin-email').value.trim();
-            if(!email) { alert("Enter Admin Email"); return; }
-            sendPasswordResetEmail(auth, email).then(()=>alert("Reset email sent")).catch(e=>alert(e.message));
-        };
-        
-        window.switchTab = (t) => {
-             ['daily','report','students'].forEach(id => {
-                 document.getElementById(`view-${id}`).classList.add('hidden');
-                 document.getElementById(`btn-${id}`).classList.replace('border-blue-500', 'border-transparent');
-             });
-             document.getElementById(`view-${t}`).classList.remove('hidden');
-             document.getElementById(`btn-${t}`).classList.replace('border-transparent', 'border-blue-500');
-             if(t==='report') window.generateReport();
-        };
-
-        window.uploadLogo = (input) => {
-            if (input.files && input.files[0]) {
-                const r = new FileReader();
-                r.onload = (e) => {
-                    localStorage.setItem('att_logo_img', e.target.result);
-                    document.getElementById('app-logo').src = e.target.result;
-                    document.getElementById('app-logo').classList.remove('hidden');
-                    document.getElementById('default-logo-icon').classList.add('hidden');
-                };
-                r.readAsDataURL(input.files[0]);
+        // --- ADD MISSING LOGOUT / ENTER CLASS ---
+        window.logout = async () => {
+            if(confirm("Log out?")) {
+                localStorage.clear();
+                await signOut(auth);
+                location.reload();
             }
         };
+
+        window.enterClass = () => {
+            const cls = document.getElementById('login-class-select').value;
+            localStorage.setItem('fcs_role', 'teacher');
+            localStorage.setItem('fcs_class', cls);
+            localStorage.setItem('fcs_teacher', window.tempTeacherName);
+            window.checkSession();
+        };
+
+        window.verifyTeacher = () => window.handleLogin('teacher');
+        window.adminLogin = () => window.handleLogin('admin');
 
         // --- INIT ---
         const d = new Date().toISOString().split('T')[0];
