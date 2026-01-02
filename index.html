@@ -427,7 +427,7 @@
     <!-- 2. LOGIC MODULE -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -451,6 +451,52 @@
         let liveDashboardUnsubs = []; // Store unsubs for dashboard
 
         // --- DEFINITIONS FIRST ---
+
+        // 1. Session Router
+        window.checkSession = function() {
+            const r = localStorage.getItem('fcs_role');
+            const c = localStorage.getItem('fcs_class');
+            const t = localStorage.getItem('fcs_teacher');
+            const v = localStorage.getItem('fcs_admin_view_class');
+
+            // Hide all first
+            window.safeClassList('login-overlay', 'add', 'hidden');
+            window.safeClassList('view-admin', 'add', 'hidden');
+            window.safeClassList('main-app', 'add', 'hidden');
+
+            if(r === 'admin') {
+                window.safeClassList('view-admin', 'remove', 'hidden');
+                // Ensure auth state is checked for safety in real app
+                if(v) window.adminViewClass(v);
+                else {
+                    window.switchAdminSection('dashboard'); 
+                    if(window.schoolData.classes.length > 0) window.renderAdminPanel();
+                }
+            } else if (r === 'teacher' && c) {
+                window.safeClassList('main-app', 'remove', 'hidden');
+                window.currentClassId = c;
+                window.teacherName = t;
+                document.getElementById('header-class-name').innerText = c;
+                document.getElementById('teacher-display').innerText = "Teacher: "+t;
+                window.initClassData(c);
+            } else {
+                // No valid session, show login
+                window.safeClassList('login-overlay', 'remove', 'hidden');
+                document.getElementById('sys-status').innerText = "Ready to Login";
+            }
+        };
+
+        // 2. Config & Data Loading
+        async function updateConfig() {
+            if(!auth.currentUser) return alert("You are not logged in.");
+            try {
+                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data');
+                await setDoc(ref, window.schoolData);
+            } catch (error) {
+                console.error("Save failed:", error);
+                alert("Cloud Save Failed: " + error.message);
+            }
+        }
 
         window.loadSchoolConfig = function() {
             onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), (snap) => {
@@ -482,8 +528,9 @@
                 const btnT = document.getElementById('btn-login-teacher');
                 const btnA = document.getElementById('btn-login-admin');
                 if(btnT) { btnT.disabled=false; btnT.innerText="Login"; btnT.classList.remove('opacity-50'); }
-                if(btnA) { btnA.disabled=false; btnA.innerText="Dashboard Login"; btnA.classList.remove('opacity-50'); }
+                if(btnA) { btnA.disabled=false; btnA.innerText="Login as Admin"; btnA.classList.remove('opacity-50'); }
                 
+                // Refresh if active
                 if(!document.getElementById('view-admin').classList.contains('hidden')) {
                     window.renderAdminPanel();
                     window.initAdminLiveDashboard(); 
@@ -499,18 +546,110 @@
              return Array.from(new Set([...globals, ...specific]));
         };
 
-        // --- NEW ADMIN REPORT LOGIC ---
-        
-        async function updateConfig() {
-            try {
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data');
-                await setDoc(ref, window.schoolData);
-            } catch (error) {
-                console.error("Save failed:", error);
-                alert("Cloud Save Failed: " + error.message);
-            }
-        }
+        // --- NEW LOGIN HANDLER ---
+        window.handleLogin = async (type) => {
+            const email = document.getElementById(`login-${type}-email`).value.trim();
+            const pass = document.getElementById(`login-${type}-pass`).value.trim();
+            
+            if(!email || !pass) return alert("Please fill all fields");
+            
+            const btn = document.getElementById(`btn-login-${type}`);
+            const originalText = btn.innerText;
+            btn.innerText = "Verifying...";
+            btn.disabled = true;
 
+            try {
+                // 1. Authenticate with Firebase
+                await signInWithEmailAndPassword(auth, email, pass);
+                
+                // 2. Determine Role & Route
+                if (type === 'admin') {
+                    // Admin logic
+                    localStorage.setItem('fcs_role', 'admin');
+                    window.checkSession();
+                } else {
+                    // Teacher logic: Must match an entry in School Data
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'));
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        const teachers = data.teachers || [];
+                        const teacher = teachers.find(t => t.email.toLowerCase() === email.toLowerCase());
+                        
+                        if (teacher) {
+                            // Populate Class Select
+                            const select = document.getElementById('login-class-select');
+                            select.innerHTML = '';
+                            if(teacher.assignedClasses && teacher.assignedClasses.length > 0) {
+                                teacher.assignedClasses.forEach(c => select.innerHTML += `<option value="${c}">${c}</option>`);
+                                document.getElementById('class-select-area').classList.remove('hidden');
+                                window.tempTeacherName = teacher.name;
+                            } else {
+                                alert("Login successful, but no classes assigned. Contact Admin.");
+                            }
+                        } else {
+                            alert("This email is not in the Teacher List. Contact Admin.");
+                            await signOut(auth);
+                        }
+                    } else {
+                        alert("System Error: Could not load school data.");
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                let msg = "Login Failed: " + error.message;
+                if(error.code === 'auth/invalid-credential') msg = "Incorrect Email or Password";
+                alert(msg);
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        };
+
+        // --- ADMIN: ADD TEACHER WITH FIREBASE AUTH ---
+        window.adminAddTeacher = async () => {
+            const name = document.getElementById('new-teacher-name').value.trim();
+            const email = document.getElementById('new-teacher-email').value.trim();
+            const pass = document.getElementById('new-teacher-pass').value.trim();
+            const cls = document.getElementById('new-teacher-class').value;
+
+            if(!name || !email || !pass) return alert("Fill all fields");
+
+            const btn = document.querySelector('button[onclick="window.adminAddTeacher()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+            btn.disabled = true;
+
+            // 1. Create Auth User (Using Secondary App Trick)
+            try {
+                const tempApp = initializeApp(firebaseConfig, "Secondary");
+                const tempAuth = getAuth(tempApp);
+                
+                await createUserWithEmailAndPassword(tempAuth, email, pass);
+                await signOut(tempAuth); // Sign out immediately
+                
+            } catch(e) {
+                alert("Error creating login: " + e.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                return;
+            }
+
+            // 2. Save to Firestore
+            const assigned = cls ? [cls] : [];
+            window.schoolData.teachers.push({name, email, password: pass, assignedClasses: assigned}); // Password stored just for ref
+            await updateConfig();
+            
+            document.getElementById('new-teacher-name').value = '';
+            document.getElementById('new-teacher-email').value = '';
+            document.getElementById('new-teacher-pass').value = '';
+            
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            window.renderAdminPanel();
+            alert("Teacher Created Successfully!");
+        };
+
+        // --- ADMIN SUBJECT MANAGEMENT (RESTORED) ---
         window.adminAddGlobalSubject = async () => {
             const name = document.getElementById('new-subject-name').value.toUpperCase().trim();
             if(!name) return;
@@ -519,13 +658,14 @@
             window.schoolData.subjects.push(name);
             await updateConfig();
             document.getElementById('new-subject-name').value = '';
-            // renderAdminPanel auto-called by snapshot
+            window.renderAdminPanel();
         };
 
         window.adminDeleteGlobalSubject = async (idx) => {
             if(confirm("Delete Global Subject?")) {
                 window.schoolData.subjects.splice(idx, 1);
                 await updateConfig();
+                window.renderAdminPanel();
             }
         };
 
@@ -539,6 +679,7 @@
                  if(!window.schoolData.class_subjects[cls].includes(upper)) {
                      window.schoolData.class_subjects[cls].push(upper);
                      await updateConfig();
+                     window.renderAdminPanel();
                  }
              }
         };
@@ -548,452 +689,41 @@
                  if(window.schoolData.class_subjects && window.schoolData.class_subjects[cls]) {
                      window.schoolData.class_subjects[cls].splice(idx, 1);
                      await updateConfig();
+                     window.renderAdminPanel();
                  }
              }
         };
 
-        window.initAdminLiveDashboard = () => {
-            const tbody = document.getElementById('admin-live-table');
-            const dateInput = document.getElementById('admin-live-date');
-            
-            if(!tbody) return;
-            
-            let selectedDate = new Date().toISOString().split('T')[0];
-            if (dateInput && dateInput.value) {
-                selectedDate = dateInput.value;
-            } else if (dateInput) {
-                dateInput.value = selectedDate;
-            }
-            
-            liveDashboardUnsubs.forEach(unsub => unsub());
-            liveDashboardUnsubs = [];
-            
-            tbody.innerHTML = '';
-            
-            if(window.schoolData.classes.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-gray-400">No classes found.</td></tr>';
-                return;
-            }
-
-            window.schoolData.classes.forEach(cls => {
-                const rowId = `live-row-${cls}`;
-                tbody.innerHTML += `
-                    <tr id="${rowId}" class="border-b hover:bg-gray-50">
-                        <td class="p-3 font-bold text-gray-700">${cls}</td>
-                        <td class="p-3 text-center text-gray-400">-</td>
-                        <td class="p-3 text-center text-gray-400">-</td>
-                        <td class="p-3 text-center text-gray-400">-</td>
-                        <td class="p-3 text-center text-gray-400">-</td>
-                    </tr>`;
-                
-                // Get Combined Subjects for this class for calc
-                const glob = window.schoolData.subjects || [];
-                const spec = window.schoolData.class_subjects?.[cls] || [];
-                const clsSubjects = Array.from(new Set([...glob, ...spec]));
-
-                const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${selectedDate}`);
-                const unsub = onSnapshot(ref, (snap) => {
-                    const row = document.getElementById(rowId);
-                    if(!row) return; 
-                    
-                    if(snap.exists()) {
-                        const records = snap.data().records || {};
-                        let fullP = 0, shortL = 0, abs = 0, leave = 0;
-                        
-                        Object.values(records).forEach(rec => {
-                             let hasP=false, hasA=false, hasL=false, hasData=false;
-                             clsSubjects.forEach(s => {
-                                 const st = rec[s];
-                                 if(st && st !== '-') {
-                                     hasData=true;
-                                     if(st==='P') hasP=true;
-                                     if(st==='A') hasA=true;
-                                     if(st==='L') hasL=true;
-                                 }
-                             });
-                             
-                             if(hasData) {
-                                 if(hasP) {
-                                     if(hasA || hasL) shortL++;
-                                     else fullP++;
-                                 } else {
-                                     if(hasL) leave++; 
-                                     else if(hasA) abs++;
-                                 }
-                             }
-                        });
-                        
-                        row.innerHTML = `
-                            <td class="p-3 font-bold text-gray-700">${cls}</td>
-                            <td class="p-3 text-center font-bold text-green-600">${fullP}</td>
-                            <td class="p-3 text-center font-bold text-orange-500">${shortL}</td>
-                            <td class="p-3 text-center font-bold text-red-600">${abs}</td>
-                            <td class="p-3 text-center font-bold text-yellow-600">${leave}</td>
-                        `;
-                    } else {
-                         row.innerHTML = `
-                            <td class="p-3 font-bold text-gray-700">${cls}</td>
-                            <td colspan="4" class="p-3 text-center text-xs text-gray-400 italic">Not Marked Yet</td>
-                        `;
-                    }
-                });
-                liveDashboardUnsubs.push(unsub);
-            });
-        };
-
-        window.renderAdminPanel = () => {
-            document.getElementById('stat-teachers').innerText = window.schoolData.teachers.length;
-            document.getElementById('stat-classes').innerText = window.schoolData.classes.length;
-            document.getElementById('stat-subjects').innerText = window.schoolData.subjects.length;
-            
-            const repSelect = document.getElementById('report-class-select');
-            if(repSelect) {
-                repSelect.innerHTML = '';
-                window.schoolData.classes.forEach(c => repSelect.innerHTML += `<option>${c}</option>`);
-            }
-
-            // Populate report download dropdown
-            const dlSelect = document.getElementById('admin-rep-class');
-            if(dlSelect) {
-                dlSelect.innerHTML = '';
-                window.schoolData.classes.forEach(c => dlSelect.innerHTML += `<option>${c}</option>`);
-            }
-
-            const tList = document.getElementById('admin-teacher-list');
-            if(tList) {
-                tList.innerHTML = '';
-                window.schoolData.teachers.forEach((t, idx) => {
-                    let checks = '';
-                    window.schoolData.classes.forEach(c => {
-                        const checked = (t.assignedClasses||[]).includes(c) ? 'checked' : '';
-                        checks += `<label class="mr-2 text-xs flex items-center bg-gray-100 px-2 py-1 rounded"><input type="checkbox" ${checked} onchange="window.adminToggleClassAssignment(${idx}, '${c}', this.checked)" class="mr-1"> ${c}</label>`;
-                    });
-                    tList.innerHTML += `
-                        <div class="border rounded p-3 bg-white shadow-sm">
-                            <div class="flex justify-between items-start mb-2 border-b pb-1">
-                                <div>
-                                    <h3 class="font-bold text-gray-800">${t.name} <button onclick="window.adminEditTeacher(${idx})" class="text-blue-500 text-xs ml-2"><i class="fas fa-edit"></i></button></h3>
-                                    <p class="text-xs text-blue-600">${t.email}</p>
-                                    <p class="text-[10px] text-gray-400">Pass: ${t.password}</p>
-                                </div>
-                                <button onclick="window.adminDeleteTeacher(${idx})" class="text-red-400 text-xs hover:text-red-600"><i class="fas fa-trash"></i></button>
-                            </div>
-                            <div class="text-[10px] text-gray-500 font-bold uppercase mb-1">Assigned Classes:</div>
-                            <div class="flex flex-wrap gap-1">${checks}</div>
-                        </div>`;
-                });
-            }
-
-            const cList = document.getElementById('admin-class-list');
-            if(cList) {
-                cList.innerHTML = '';
-                window.schoolData.classes.forEach((c, idx) => {
-                    cList.innerHTML += `
-                        <div class="flex justify-between bg-white p-3 mb-2 border rounded shadow-sm items-center">
-                            <div>
-                                <span class="font-bold text-gray-700 block">${c}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="window.adminViewClass('${c}')" class="text-xs bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded hover:bg-green-200 font-bold"><i class="fas fa-eye mr-1"></i> View</button>
-                                <button onclick="window.adminEditClass(${idx})" class="text-blue-500 p-1 hover:bg-blue-50 rounded"><i class="fas fa-edit"></i></button>
-                                <button onclick="window.adminDeleteClass(${idx})" class="text-red-500 p-1 hover:bg-red-50 rounded"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>`;
-                });
-            }
-
-            const sList = document.getElementById('admin-subject-list');
-            if(sList) {
-                let html = '<div class="mb-4"><h3 class="font-bold text-gray-700 border-b mb-2 text-sm">Global Subjects (All Classes)</h3><div class="flex flex-wrap gap-2">';
-                if(window.schoolData.subjects) {
-                    window.schoolData.subjects.forEach((s, i) => {
-                        html += `<span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs flex items-center shadow-sm font-bold border border-purple-200">${s} <button onclick="window.adminDeleteGlobalSubject(${i})" class="ml-2 text-red-500 hover:text-red-700 font-bold">×</button></span>`;
-                    });
-                }
-                html += '</div></div>';
-
-                html += '<div><h3 class="font-bold text-gray-700 border-b mb-2 text-sm">Class Specific Additions</h3>';
-                window.schoolData.classes.forEach(cls => {
-                    const specs = window.schoolData.class_subjects?.[cls] || [];
-                    html += `<div class="mb-2 flex items-center flex-wrap"><span class="text-sm font-bold text-gray-600 mr-2">${cls}:</span> `;
-                    
-                    if(specs.length === 0) html += '<span class="text-xs text-gray-400 mr-2">No extras</span>';
-                    else {
-                         specs.forEach((s, i) => {
-                             html += `<span class="bg-blue-50 text-blue-600 border border-blue-200 px-2 py-0.5 rounded text-xs mr-1 flex items-center">${s} <button onclick="window.adminDeleteSpecificSubject('${cls}', ${i})" class="text-red-400 hover:text-red-600 ml-1 font-bold">×</button></span>`;
-                         });
-                    }
-                    html += `<button onclick="window.promptAddSpecific('${cls}')" class="text-xs bg-gray-200 px-2 py-0.5 rounded hover:bg-gray-300 ml-1 border border-gray-300">+ Add</button></div>`;
-                });
-                html += '</div>';
-                sList.innerHTML = html;
-            }
-        };
-
-        // --- NAVIGATION HELPERS ---
-        window.switchAdminSection = (sectionId) => {
-            ['dashboard', 'teachers', 'classes', 'subjects', 'reports'].forEach(id => {
-                document.getElementById(`admin-section-${id}`).classList.add('hidden');
-            });
-            document.getElementById(`admin-section-${sectionId}`).classList.remove('hidden');
-            
-            // Trigger Dashboard refresh if selected
-            if(sectionId === 'dashboard') window.initAdminLiveDashboard();
-        };
-
-        window.checkSession = function() {
-            const r = localStorage.getItem('fcs_role');
-            const c = localStorage.getItem('fcs_class');
-            const t = localStorage.getItem('fcs_teacher');
-            const v = localStorage.getItem('fcs_admin_view_class');
-
-            if(r === 'admin') {
-                window.safeClassList('login-overlay', 'add', 'hidden');
-                window.safeClassList('admin-badge', 'remove', 'hidden');
-                window.currentUserRole = 'admin';
-                if(v) window.adminViewClass(v);
-                else {
-                    window.safeClassList('view-admin', 'remove', 'hidden');
-                    window.switchAdminSection('dashboard'); 
-                    if(window.schoolData.classes.length > 0) window.renderAdminPanel();
-                }
-            } else if (r === 'teacher' && c) {
-                window.safeClassList('login-overlay', 'add', 'hidden');
-                window.safeClassList('main-app', 'remove', 'hidden');
-                window.currentClassId = c;
-                window.teacherName = t;
-                document.getElementById('header-class-name').innerText = c;
-                document.getElementById('teacher-display').innerText = "Teacher: "+t;
-                window.initClassData(c);
-            }
-        };
-
-        window.initClassData = function(classId) {
-            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', classId), (snap) => {
-                students = snap.exists() ? (snap.data().students || []) : [];
-                window.renderStudentManager();
-                window.loadDailyAttendance();
-            });
-            window.handleDateChange();
-        };
-
-        window.handleDateChange = () => {
-            const date = document.getElementById('attendance-date').value;
-            if(!date || !window.currentClassId) return;
-            if(dailyUnsub) dailyUnsub();
-            dailyUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.currentClassId}_${date}`), (snap) => {
-                attendanceData[date] = snap.exists() ? snap.data().records : {};
-                window.checkSundayLogic(date);
-            });
-        };
-
-        window.checkSundayLogic = (date) => {
-            const d = new Date(date);
-            const isSun = d.getDay() === 0;
-            const hasData = Object.keys(attendanceData[date] || {}).length > 0;
-            const badge = document.getElementById('sunday-badge');
-            
-            const subList = window.getCurrentSubjects();
-
-            if(isSun && !hasData) {
-                if(badge) badge.classList.remove('hidden');
-                subList.forEach(s => activeSubjects[s] = false);
-            } else {
-                if(badge) badge.classList.add('hidden');
-                let foundActive = false;
-                if(hasData) {
-                   const keys = Object.keys(attendanceData[date]);
-                   if(keys.length>0) {
-                       const rec = attendanceData[date][keys[0]];
-                       subList.forEach(s => { 
-                           if(rec[s] && rec[s] !== '-') activeSubjects[s]=true;
-                           else activeSubjects[s]=false;
-                       });
-                       foundActive = true;
-                   }
-                }
-                if(!foundActive) subList.forEach(s => activeSubjects[s] = true);
-            }
-            window.renderSubjectToggles();
-            window.loadDailyAttendance();
-        };
-
-        window.renderSubjectToggles = () => {
-            const c = document.getElementById('subject-toggles');
-            if(!c) return;
-            c.innerHTML = '';
-            const subList = window.getCurrentSubjects();
-            subList.forEach(s => {
-                c.innerHTML += `<div onclick="window.toggleSub('${s}')" class="toggle-btn ${activeSubjects[s] ? 'toggle-active' : 'toggle-inactive'}">${s}</div>`;
-            });
-        };
-
-        window.loadDailyAttendance = () => {
-            const list = document.getElementById('daily-list');
-            if(!list) return;
-            list.innerHTML = '';
-            const search = document.getElementById('student-search').value.toLowerCase().trim();
-            const date = document.getElementById('attendance-date').value;
-            
-            document.getElementById('student-count-display').innerText = `${students.length} Students`;
-            
-            const filtered = students.filter(s => (s.name||'').toLowerCase().includes(search) || (s.rollNo||'').includes(search));
-            
-            if(filtered.length === 0) { list.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-gray-500">No students found.</td></tr>`; return; }
-
-            const subList = window.getCurrentSubjects();
-
-            filtered.forEach(s => {
-                let rec = attendanceData[date]?.[s.id] || {};
-                subList.forEach(sub => { if(!rec[sub]) rec[sub] = activeSubjects[sub] ? 'P' : '-'; });
-                
-                let badges = '';
-                subList.forEach(sub => {
-                    const st = rec[sub];
-                    badges += `<div onclick="window.toggleSt('${date}', ${s.id}, '${sub}', this)" class="subject-badge rounded status-${st} ${!activeSubjects[sub]?'opacity-50':''}" data-s="${st}">${sub}: ${st}</div>`;
-                });
-
-                list.innerHTML += `
-                    <tr class="border-b">
-                        <td class="p-2 text-center font-bold text-gray-600">${s.rollNo}</td>
-                        <td class="p-2">${s.name}</td>
-                        <td class="p-2 text-center">
-                            <button onclick="window.setAll('${date}', ${s.id}, 'P')" class="text-green-600 mx-1">P</button>
-                            <button onclick="window.setAll('${date}', ${s.id}, 'A')" class="text-red-600 mx-1">A</button>
-                            <button onclick="window.setAll('${date}', ${s.id}, 'L')" class="text-yellow-600 mx-1">L</button>
-                        </td>
-                        <td class="p-2 flex flex-wrap gap-1">${badges}</td>
-                    </tr>`;
-            });
-        };
-
-        window.toggleSub = (s) => { activeSubjects[s] = !activeSubjects[s]; window.renderSubjectToggles(); window.loadDailyAttendance(); };
-        window.toggleSt = (d, id, sub, el) => {
-            if(!activeSubjects[sub]) return;
-            const cur = el.getAttribute('data-s');
-            const next = cur === 'P' ? 'A' : (cur === 'A' ? 'L' : 'P');
-            if(!attendanceData[d]) attendanceData[d] = {};
-            if(!attendanceData[d][id]) attendanceData[d][id] = {};
-            attendanceData[d][id][sub] = next;
-            window.loadDailyAttendance();
-        };
-        window.setAll = (d, id, st) => {
-            if(!attendanceData[d]) attendanceData[d] = {};
-            if(!attendanceData[d][id]) attendanceData[d][id] = {};
-            const subList = window.getCurrentSubjects();
-            subList.forEach(sub => { if(activeSubjects[sub]) attendanceData[d][id][sub] = st; });
-            window.loadDailyAttendance();
-        };
-
-        window.saveCurrentDay = async () => {
-            const d = document.getElementById('attendance-date').value;
-            const btn = document.getElementById('btn-save-cloud');
-            btn.innerHTML = 'Saving...';
-            if(!attendanceData[d]) attendanceData[d] = {};
-            const subList = window.getCurrentSubjects();
-            students.forEach(s => {
-                if(!attendanceData[d][s.id]) attendanceData[d][s.id] = {};
-                subList.forEach(sub => {
-                    const v = attendanceData[d][s.id][sub];
-                    if(activeSubjects[sub] && (!v || v==='-')) attendanceData[d][s.id][sub] = 'P';
-                    else if(!activeSubjects[sub]) attendanceData[d][s.id][sub] = '-';
-                });
-            });
-            try {
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.currentClassId}_${d}`), {
-                    date: d, classId: window.currentClassId, records: attendanceData[d]
-                });
-                window.showToast("Saved!");
-            } catch(e) { alert("Save Error: "+e.message); }
-            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Save to Cloud';
-        };
-
-        // --- ADMIN ---
-        window.adminLogin = async () => {
-            const e = document.getElementById('login-admin-email').value.trim();
-            const p = document.getElementById('login-admin-pass').value.trim();
-            if(!e || !p) return alert("Enter credentials");
-            try {
-                await signInWithEmailAndPassword(auth, e, p);
-                localStorage.setItem('fcs_role', 'admin');
-                window.checkSession();
-            } catch(err) { alert(err.message); }
-        };
-
-        window.verifyTeacher = () => {
-            if(!window.dataLoaded) return alert("System loading...");
-            const e = document.getElementById('login-teacher-email').value.trim().toLowerCase();
-            const p = document.getElementById('login-teacher-pass').value.trim();
-            const t = schoolData.teachers.find(x => (x.email.toLowerCase()===e || x.name.toLowerCase()===e) && x.password===p);
-            if(t) {
-                const s = document.getElementById('login-class-select');
-                s.innerHTML = '';
-                if(t.assignedClasses && t.assignedClasses.length) {
-                    t.assignedClasses.forEach(c => s.innerHTML += `<option>${c}</option>`);
-                    document.getElementById('class-select-area').classList.remove('hidden');
-                    window.tempTeacherName = t.name;
-                } else alert("No assigned classes.");
-            } else alert("Invalid credentials.");
-        };
-
-        window.enterClass = () => {
-            const cls = document.getElementById('login-class-select').value;
-            localStorage.setItem('fcs_role', 'teacher');
-            localStorage.setItem('fcs_class', cls);
-            localStorage.setItem('fcs_teacher', window.tempTeacherName);
-            window.checkSession();
-        };
-
-        window.adminCreateClass = async () => {
-            const name = document.getElementById('new-class-name').value.toUpperCase();
-            if(!name) return;
-            schoolData.classes.push(name);
-            await updateConfig();
-            document.getElementById('new-class-name').value = '';
-            renderAdminPanel();
-        };
-
-        window.adminAddTeacher = async () => {
-            const name = document.getElementById('new-teacher-name').value;
-            const email = document.getElementById('new-teacher-email').value;
-            const pass = document.getElementById('new-teacher-pass').value;
-            if(!name || !email || !pass) return;
-            schoolData.teachers.push({name, email, password: pass, assignedClasses: []});
-            await updateConfig();
-            document.getElementById('new-teacher-name').value = '';
-            document.getElementById('new-teacher-email').value = '';
-            document.getElementById('new-teacher-pass').value = '';
-            renderAdminPanel();
-        };
-
         window.adminEditClass = async (idx) => {
-            const old = schoolData.classes[idx];
+            const old = window.schoolData.classes[idx];
             const name = prompt("New Name:", old);
             if(name && name!==old) {
-                schoolData.classes[idx] = name.toUpperCase();
+                const upperName = name.trim().toUpperCase();
+                if(window.schoolData.classes.includes(upperName)) { alert("Name taken."); return; }
+                window.schoolData.classes[idx] = upperName;
                 await updateConfig();
-                renderAdminPanel();
+                window.renderAdminPanel();
             }
         };
 
         window.adminDeleteClass = async (idx) => {
             if(confirm("Delete Class?")) {
-                schoolData.classes.splice(idx,1);
+                window.schoolData.classes.splice(idx,1);
                 await updateConfig();
-                renderAdminPanel();
+                window.renderAdminPanel();
             }
         };
         
         window.adminEditTeacher = (idx) => {
             window.editingTeacherIdx = idx;
-            document.getElementById('edit-t-name').value = schoolData.teachers[idx].name;
-            document.getElementById('edit-t-email').value = schoolData.teachers[idx].email;
-            document.getElementById('edit-t-pass').value = schoolData.teachers[idx].password;
+            document.getElementById('edit-t-name').value = window.schoolData.teachers[idx].name;
+            document.getElementById('edit-t-email').value = window.schoolData.teachers[idx].email;
+            document.getElementById('edit-t-pass').value = window.schoolData.teachers[idx].password;
             window.safeClassList('admin-edit-modal', 'remove', 'hidden');
         };
 
         window.adminSaveTeacherEdit = async () => {
-             const t = schoolData.teachers[window.editingTeacherIdx];
+             const t = window.schoolData.teachers[window.editingTeacherIdx];
              t.name = document.getElementById('edit-t-name').value.trim();
              t.email = document.getElementById('edit-t-email').value.trim();
              t.password = document.getElementById('edit-t-pass').value.trim();
@@ -1006,7 +736,7 @@
              if(confirm("Delete Teacher?")) {
                  window.schoolData.teachers.splice(idx,1);
                  await updateConfig();
-                 renderAdminPanel();
+                 window.renderAdminPanel();
              }
         };
 
@@ -1396,7 +1126,7 @@
                 r.readAsDataURL(input.files[0]);
             }
         };
-        
+
         // --- ADD MISSING LOGOUT / ENTER CLASS ---
         window.logout = async () => {
             if(confirm("Log out?")) {
