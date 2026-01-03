@@ -27,6 +27,7 @@
     </script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
+        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -40,18 +41,20 @@
         .status-btn { transition: all 0.1s ease; }
         .status-btn:active { transform: scale(0.95); }
 
-        /* Sticky Columns */
+        /* Sticky Columns for Mobile Table */
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
         .sticky-col-2 { position: sticky; left: 60px; z-index: 10; }
     </style>
 </head>
 <body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
 
+    <!-- NOTIFICATIONS -->
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- LOGIN SCREEN -->
+    <!-- ===================== LOGIN SCREEN ===================== -->
     <div id="view-login" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900 p-4 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-100">
+            <!-- Header -->
             <div class="bg-primary p-8 text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-black/10"></div>
                 <div class="relative z-10">
@@ -63,41 +66,63 @@
                 </div>
             </div>
 
+            <!-- Tabs -->
             <div class="flex border-b border-slate-100">
                 <button onclick="ui.setLoginTab('teacher')" id="tab-login-teacher" class="flex-1 py-4 text-sm font-semibold text-primary border-b-2 border-primary bg-indigo-50/50 transition-colors">Teacher</button>
                 <button onclick="ui.setLoginTab('admin')" id="tab-login-admin" class="flex-1 py-4 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors">Administrator</button>
             </div>
 
+            <!-- Forms -->
             <div class="p-8">
                 <!-- Teacher Form -->
                 <div id="form-teacher" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                        <input type="email" id="inp-teacher-email" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="teacher@forte.com">
+                        <div class="relative">
+                            <i class="fas fa-envelope absolute left-3 top-3 text-slate-400"></i>
+                            <input type="email" id="inp-teacher-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="teacher@forte.com">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                        <input type="password" id="inp-teacher-pass" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="••••••••">
+                        <div class="relative">
+                            <i class="fas fa-lock absolute left-3 top-3 text-slate-400"></i>
+                            <input type="password" id="inp-teacher-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
+                        </div>
                     </div>
+                    
                     <div id="teacher-class-select-wrapper" class="hidden">
                          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Class</label>
-                         <select id="inp-teacher-class" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm mb-2"></select>
-                         <button onclick="auth.enterClass()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg">Enter Class</button>
+                         <select id="inp-teacher-class" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-green-500"></select>
+                         <button onclick="auth.enterClass()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all">
+                            Enter Class <i class="fas fa-arrow-right ml-2"></i>
+                         </button>
                     </div>
-                    <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg">Login</button>
+
+                    <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-600/20 transition-all">
+                        Login
+                    </button>
                 </div>
 
                 <!-- Admin Form -->
                 <div id="form-admin" class="space-y-4 hidden">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Email</label>
-                        <input type="email" id="inp-admin-email" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="admin@forte.com">
+                        <div class="relative">
+                            <i class="fas fa-user-shield absolute left-3 top-3 text-slate-400"></i>
+                            <input type="email" id="inp-admin-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="admin@forte.com">
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                        <input type="password" id="inp-admin-pass" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="••••••••">
+                        <div class="relative">
+                            <i class="fas fa-key absolute left-3 top-3 text-slate-400"></i>
+                            <input type="password" id="inp-admin-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
+                        </div>
                     </div>
-                    <button id="btn-admin-login" onclick="auth.login('admin')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg">Access Dashboard</button>
+                    <button id="btn-admin-login" onclick="auth.login('admin')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg shadow-slate-800/20 transition-all">
+                        Access Dashboard
+                    </button>
                     <div class="text-center mt-4">
                         <button onclick="auth.resetPass()" class="text-xs text-primary hover:underline">Forgot Password?</button>
                     </div>
@@ -106,8 +131,10 @@
         </div>
     </div>
 
-    <!-- MAIN APP -->
+    <!-- ===================== MAIN APP LAYOUT ===================== -->
     <div id="view-app" class="flex-1 flex flex-col h-full hidden">
+        
+        <!-- Navbar -->
         <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm z-30 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-lg">F</div>
@@ -116,62 +143,103 @@
                     <p class="text-[10px] text-slate-500 font-medium" id="header-subtitle">Welcome</p>
                 </div>
             </div>
-            <button onclick="auth.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Logout"><i class="fas fa-power-off"></i></button>
+            <div class="flex items-center gap-2">
+                <button onclick="auth.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Logout">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
         </header>
 
+        <!-- Content Area -->
         <div class="flex-1 overflow-hidden relative flex">
-            <!-- Sidebar -->
-            <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 h-full">
+            
+            <!-- ADMIN SIDEBAR (Desktop / Mobile Toggle) -->
+            <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 absolute md:relative z-20 h-full transition-transform transform md:translate-x-0 -translate-x-full">
                 <div class="p-4 space-y-1">
-                    <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-dashboard"><i class="fas fa-home w-5"></i> Dashboard</button>
-                    <button onclick="ui.switchAdminTab('teachers')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-teachers"><i class="fas fa-chalkboard-teacher w-5"></i> Teachers</button>
-                    <button onclick="ui.switchAdminTab('classes')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-classes"><i class="fas fa-layer-group w-5"></i> Classes</button>
-                    <button onclick="ui.switchAdminTab('subjects')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-subjects"><i class="fas fa-book w-5"></i> Subjects</button>
-                    <button onclick="ui.switchAdminTab('reports')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-reports"><i class="fas fa-file-csv w-5"></i> Reports</button>
+                    <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3 active-nav" id="nav-dashboard">
+                        <i class="fas fa-home w-5"></i> Dashboard
+                    </button>
+                    <button onclick="ui.switchAdminTab('teachers')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-teachers">
+                        <i class="fas fa-chalkboard-teacher w-5"></i> Teachers
+                    </button>
+                    <button onclick="ui.switchAdminTab('classes')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-classes">
+                        <i class="fas fa-layer-group w-5"></i> Classes
+                    </button>
+                    <button onclick="ui.switchAdminTab('subjects')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-subjects">
+                        <i class="fas fa-book w-5"></i> Subjects
+                    </button>
+                    <button onclick="ui.switchAdminTab('reports')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-reports">
+                        <i class="fas fa-file-csv w-5"></i> Reports
+                    </button>
                 </div>
             </aside>
 
+            <!-- MAIN SCROLLABLE AREA -->
             <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 w-full relative">
                 
-                <!-- TEACHER ATTENDANCE -->
+                <!-- TEACHER: ATTENDANCE VIEW -->
                 <div id="view-teacher-attendance" class="hidden max-w-6xl mx-auto">
+                    <!-- Controls -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 sticky top-0 z-20 space-y-3">
                         <div class="flex flex-col md:flex-row justify-between gap-3">
                             <div class="flex gap-2 items-center flex-wrap">
-                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 outline-none" onchange="teacher.loadData()">
+                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
                                 <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
                             </div>
                             <div class="flex gap-2 w-full md:w-auto">
-                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><i class="fas fa-user-plus"></i> Add</button>
+                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                    <i class="fas fa-user-plus"></i> Add
+                                </button>
                                 <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <i class="fas fa-file-upload"></i> Import CSV <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
+                                    <i class="fas fa-file-upload"></i> Import CSV
+                                    <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
                                 </label>
-                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto"><i class="fas fa-save"></i> Save Attendance</button>
+                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
+                                    <i class="fas fa-save"></i> Save Attendance
+                                </button>
                             </div>
                         </div>
+                        
+                        <!-- Search & Filter -->
                         <div class="space-y-2">
-                             <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none" onkeyup="teacher.filter()"></div>
+                             <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()"></div>
                              <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
                                  <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today:</div>
-                                 <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center"></div>
+                                 <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
+                                     <!-- Injected by JS -->
+                                 </div>
                              </div>
                         </div>
                     </div>
+
+                    <!-- List (Scrollable Table) -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
                         <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200"></thead>
+                            <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
+                                <!-- Dynamic Headers -->
+                            </thead>
                             <tbody id="att-list" class="divide-y divide-slate-100 text-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ADMIN DASHBOARD -->
+                <!-- ADMIN: DASHBOARD -->
                 <div id="view-admin-dashboard" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Teachers</div><div class="text-3xl font-bold text-slate-800" id="stat-t">0</div></div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Classes</div><div class="text-3xl font-bold text-slate-800" id="stat-c">0</div></div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Subjects</div><div class="text-3xl font-bold text-slate-800" id="stat-s">0</div></div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Teachers</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-t">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Classes</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-c">0</div>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Subjects</div>
+                            <div class="text-3xl font-bold text-slate-800" id="stat-s">0</div>
+                        </div>
                     </div>
+
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                             <h3 class="font-bold text-slate-700">Live Attendance Feed</h3>
@@ -183,9 +251,17 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
-                                    <tr><th class="px-6 py-3">Class</th><th class="px-6 py-3 text-center text-green-600">Present</th><th class="px-6 py-3 text-center text-red-600">Absent</th><th class="px-6 py-3 text-center text-yellow-600">Leave</th><th class="px-6 py-3 text-center text-orange-500">S-Leave</th></tr>
+                                    <tr>
+                                        <th class="px-6 py-3">Class</th>
+                                        <th class="px-6 py-3 text-center text-green-600">Present</th>
+                                        <th class="px-6 py-3 text-center text-red-600">Absent</th>
+                                        <th class="px-6 py-3 text-center text-yellow-600">Leave</th>
+                                        <th class="px-6 py-3 text-center text-orange-500">S-Leave</th>
+                                    </tr>
                                 </thead>
-                                <tbody id="live-table-body"></tbody>
+                                <tbody id="live-table-body">
+                                    <tr><td colspan="5" class="p-6 text-center text-slate-400">Loading live data...</td></tr>
+                                </tbody>
                             </table>
                         </div>
                     </div>
@@ -225,6 +301,7 @@
                         </div>
                         <div id="list-s-global" class="flex flex-wrap gap-2"></div>
                     </div>
+                    
                     <div id="list-s-specific" class="space-y-4"></div>
                 </div>
 
@@ -256,6 +333,7 @@
                         </div>
                     </div>
                 </div>
+
             </main>
         </div>
     </div>
@@ -599,6 +677,10 @@
                 // Clear entire table first - IMPORTANT: This resets the DOM completely
                 tbody.innerHTML = '';
                 
+                // Clear previous subscriptions
+                window.state.unsubs.forEach(unsub => unsub());
+                window.state.unsubs = [];
+
                 window.state.school.classes.forEach(cls => {
                     const rid = `live-${cls.replace(/\s+/g, '-')}`;
                     // Create row element properly instead of innerHTML += which kills listeners
@@ -616,6 +698,7 @@
                              const recs = snap.data().records;
                              let p=0, a=0, l=0, sl=0;
                              Object.values(recs).forEach(r => {
+                                 // Sum status across subjects
                                  const vals = Object.values(r);
                                  if(vals.includes('P')) p++;
                                  else if(vals.includes('L')) l++;
@@ -752,7 +835,7 @@
             
             toggleSub: (s) => {
                 window.state.activeSubjects[s] = !window.state.activeSubjects[s];
-                teacher.loadData(); 
+                teacher.renderList(); 
             },
             
             setRowStatus: (sid, status) => {
