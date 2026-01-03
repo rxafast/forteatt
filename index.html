@@ -38,8 +38,8 @@
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .status-pill { transition: all 0.2s ease; user-select: none; cursor: pointer; }
-        .status-pill:active { transform: scale(0.95); }
+        .status-btn { transition: all 0.1s ease; }
+        .status-btn:active { transform: scale(0.95); }
     </style>
 </head>
 <body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
@@ -174,24 +174,36 @@
             <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 w-full relative">
                 
                 <!-- TEACHER: ATTENDANCE VIEW -->
-                <div id="view-teacher-attendance" class="hidden max-w-3xl mx-auto">
+                <div id="view-teacher-attendance" class="hidden max-w-4xl mx-auto">
                     <!-- Controls -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex flex-col sm:flex-row justify-between gap-3 sticky top-0 z-10">
-                        <div class="flex gap-2 items-center">
-                            <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
-                            <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 sticky top-0 z-20">
+                        <div class="flex flex-col md:flex-row justify-between gap-3 mb-3">
+                            <div class="flex gap-2 items-center">
+                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
+                                <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
+                            </div>
+                            <div class="flex gap-2 w-full md:w-auto">
+                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                    <i class="fas fa-user-plus"></i> Add
+                                </button>
+                                <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                    <i class="fas fa-file-upload"></i> Import
+                                    <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
+                                </label>
+                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
+                                    <i class="fas fa-save"></i> Save
+                                </button>
+                            </div>
                         </div>
-                        <div class="flex gap-2 w-full sm:w-auto">
-                            <input type="text" id="att-search" placeholder="Search..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()">
-                            <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-transform active:scale-95 flex items-center gap-2">
-                                <i class="fas fa-save"></i> Save
-                            </button>
+                        
+                        <!-- Search & Filter -->
+                        <div class="flex flex-col sm:flex-row gap-2">
+                             <input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()">
+                             <!-- Subject Filters -->
+                             <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
+                                 <!-- Injected by JS -->
+                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Subject Filters -->
-                    <div id="att-subjects-filter" class="flex flex-wrap gap-2 mb-4">
-                        <!-- Injected by JS -->
                     </div>
 
                     <!-- List -->
@@ -199,9 +211,9 @@
                         <table class="w-full text-left text-sm">
                             <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-semibold">
                                 <tr>
-                                    <th class="px-4 py-3 w-16">Roll</th>
+                                    <th class="px-4 py-3 w-16 text-center">Roll</th>
                                     <th class="px-4 py-3">Name</th>
-                                    <th class="px-4 py-3 text-right">Status</th>
+                                    <th class="px-4 py-3">Attendance Status</th>
                                 </tr>
                             </thead>
                             <tbody id="att-list" class="divide-y divide-slate-100"></tbody>
@@ -239,10 +251,10 @@
                                 <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
                                     <tr>
                                         <th class="px-6 py-3">Class</th>
-                                        <th class="px-6 py-3 text-center text-green-600">Full Present</th>
-                                        <th class="px-6 py-3 text-center text-orange-600">Short Leave</th>
+                                        <th class="px-6 py-3 text-center text-green-600">Present</th>
                                         <th class="px-6 py-3 text-center text-red-600">Absent</th>
                                         <th class="px-6 py-3 text-center text-yellow-600">Leave</th>
+                                        <th class="px-6 py-3 text-center text-orange-500">S-Leave</th>
                                     </tr>
                                 </thead>
                                 <tbody id="live-table-body">
@@ -328,21 +340,21 @@
     <!-- Student Edit Modal -->
     <div id="modal-student" class="fixed inset-0 z-[70] bg-black/40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
-            <h3 class="font-bold text-lg mb-4">Manage Student</h3>
+            <h3 class="font-bold text-lg mb-4" id="modal-student-title">Manage Student</h3>
             <input type="text" id="mod-stu-roll" class="w-full border rounded p-2 mb-2" placeholder="Roll No">
             <input type="text" id="mod-stu-name" class="w-full border rounded p-2 mb-4" placeholder="Name">
             <div class="flex gap-2">
                 <button onclick="document.getElementById('modal-student').classList.add('hidden')" class="flex-1 py-2 border rounded text-slate-600">Cancel</button>
                 <button onclick="teacher.saveStudent()" class="flex-1 py-2 bg-primary text-white rounded font-bold">Save</button>
             </div>
-            <button onclick="teacher.deleteStudent()" class="w-full mt-2 text-red-500 text-xs hover:underline">Delete Student</button>
+            <button id="btn-del-student" onclick="teacher.deleteStudent()" class="w-full mt-2 text-red-500 text-xs hover:underline hidden">Delete Student</button>
         </div>
     </div>
 
     <!-- LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // --- CONFIG ---
@@ -615,7 +627,7 @@
                                  else if(vals.includes('A')) a++;
                                  else if(vals.includes('S/L')) sl++;
                              });
-                             el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-orange-500 font-bold">${sl}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td>`;
+                             el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td><td class="text-center text-orange-500 font-bold">${sl}</td>`;
                          } else {
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td colspan="4" class="text-center text-xs text-slate-400">Pending</td>`;
                          }
@@ -633,8 +645,6 @@
                 document.getElementById('header-subtitle').innerText = "Admin View Mode";
                 
                 window.teacher.init(); // Re-use teacher logic
-                
-                // Add back button logic handled by reload for now or simple UI toggle
             },
             
             // DOWNLOADS
@@ -776,15 +786,14 @@
                     .sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}))
                     .forEach((s, idx) => {
                         let row = `<tr class="hover:bg-slate-50 transition-colors group">
-                            <td class="px-4 py-3 font-mono text-slate-600 font-bold">${s.rollNo}</td>
-                            <td class="px-4 py-3 font-medium text-slate-800 flex justify-between items-center">
+                            <td class="px-4 py-3 font-mono text-slate-600 font-bold text-center">${s.rollNo}</td>
+                            <td class="px-4 py-3 font-medium text-slate-800 flex justify-between items-center cursor-pointer" onclick="teacher.editStudent(${idx})">
                                 ${s.name}
-                                <i class="fas fa-ellipsis-v text-slate-300 md:hidden p-2" onclick="teacher.editStudent(${idx})"></i> 
                             </td>
-                            <td class="px-4 py-3 text-right">
-                                <div class="flex flex-wrap justify-end gap-1">`;
+                            <td class="px-4 py-3">
+                                <div class="flex flex-col gap-2">`;
                                 
-                        // Subjects pills
+                        // Subjects button groups
                         const glob = window.state.school.subjects || [];
                         const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                         const subs = Array.from(new Set([...glob, ...spec]));
@@ -795,12 +804,26 @@
                             const rec = window.state.attendance[s.id] || {};
                             const status = rec[sub] || 'P'; // Default Present
                             
-                            let color = "bg-green-100 text-green-700 border-green-200";
-                            if(status === 'A') color = "bg-red-100 text-red-700 border-red-200";
-                            if(status === 'L') color = "bg-yellow-100 text-yellow-700 border-yellow-200";
-                            if(status === 'S/L') color = "bg-orange-100 text-orange-700 border-orange-200";
-                            
-                            row += `<div onclick="teacher.toggleStatus('${s.id}', '${sub}')" class="status-pill ${color} border px-2 py-1 rounded text-xs font-bold min-w-[30px] text-center">${sub}: ${status}</div>`;
+                            const btnClass = (val, current) => {
+                                let base = "px-2 py-1 text-xs font-bold flex-1 border-r last:border-r-0 border-slate-200 transition-colors";
+                                if (val !== current) return base + " text-slate-400 bg-white hover:bg-slate-50";
+                                if (val === 'P') return base + " bg-green-500 text-white";
+                                if (val === 'A') return base + " bg-red-500 text-white";
+                                if (val === 'L') return base + " bg-yellow-500 text-white";
+                                if (val === 'S/L') return base + " bg-orange-500 text-white";
+                            };
+
+                            row += `
+                                <div class="flex items-center text-xs">
+                                    <span class="w-12 font-bold text-slate-500 shrink-0">${sub}</span>
+                                    <div class="flex border border-slate-200 rounded overflow-hidden w-full max-w-[200px]">
+                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${btnClass('P', status)}">P</button>
+                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${btnClass('A', status)}">A</button>
+                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${btnClass('L', status)}">L</button>
+                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${btnClass('S/L', status)}">S/L</button>
+                                    </div>
+                                </div>
+                            `;
                         });
                         
                         row += `</div></td></tr>`;
@@ -808,17 +831,9 @@
                     });
             },
             
-            toggleStatus: (sid, sub) => {
+            setStatus: (sid, sub, status) => {
                 if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                const curr = window.state.attendance[sid][sub] || 'P';
-                // Cycle: P -> A -> L -> S/L -> P
-                let next = 'P';
-                if (curr === 'P') next = 'A';
-                else if (curr === 'A') next = 'L';
-                else if (curr === 'L') next = 'S/L';
-                else if (curr === 'S/L') next = 'P';
-                
-                window.state.attendance[sid][sub] = next;
+                window.state.attendance[sid][sub] = status;
                 teacher.renderList();
             },
             
@@ -849,18 +864,77 @@
             
             filter: () => teacher.renderList(),
             
-            // Student Mgmt (Admin only really, but teacher can view in list)
-            // Added modal for adding student
-            addStudent: async () => {
-                // Check if admin or teacher (allow both for now if needed, typically admin)
-                // Assuming admin-like power for now for simplicity of single file
-                const r = prompt("Roll No");
-                const n = prompt("Name");
-                if(r && n) {
+            // Student Mgmt
+            openAddStudentModal: () => {
+                window.state.editingStudentIdx = null;
+                document.getElementById('modal-student-title').innerText = "Add Student";
+                document.getElementById('mod-stu-roll').value = "";
+                document.getElementById('mod-stu-name').value = "";
+                document.getElementById('btn-del-student').classList.add('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
+            },
+
+            editStudent: (idx) => {
+                window.state.editingStudentIdx = idx;
+                const s = window.state.students[idx];
+                document.getElementById('modal-student-title').innerText = "Edit Student";
+                document.getElementById('mod-stu-roll').value = s.rollNo;
+                document.getElementById('mod-stu-name').value = s.name;
+                document.getElementById('btn-del-student').classList.remove('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
+            },
+
+            saveStudent: async () => {
+                const r = document.getElementById('mod-stu-roll').value;
+                const n = document.getElementById('mod-stu-name').value;
+                if(!r || !n) return alert("Fill all fields");
+
+                if (window.state.editingStudentIdx !== null) {
+                    // Edit
+                    window.state.students[window.state.editingStudentIdx].rollNo = r;
+                    window.state.students[window.state.editingStudentIdx].name = n;
+                } else {
+                    // Add
                     window.state.students.push({id: Date.now().toString(), rollNo: r, name: n});
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students});
+                }
+                
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                document.getElementById('modal-student').classList.add('hidden');
+                teacher.renderList();
+                toast(window.state.editingStudentIdx !== null ? "Updated" : "Added");
+            },
+
+            deleteStudent: async () => {
+                if(confirm("Delete student?")) {
+                    window.state.students.splice(window.state.editingStudentIdx, 1);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                    document.getElementById('modal-student').classList.add('hidden');
                     teacher.renderList();
                 }
+            },
+
+            importFile: (input) => {
+                const f = input.files[0];
+                if(!f) return;
+                const r = new FileReader();
+                r.onload = async (e) => {
+                    const lines = e.target.result.split('\n');
+                    let count = 0;
+                    lines.forEach(l => {
+                        const [roll, name] = l.split(',');
+                        if(roll && name) {
+                            window.state.students.push({id: Date.now()+Math.random().toString(), rollNo: roll.trim(), name: name.trim()});
+                            count++;
+                        }
+                    });
+                    if(count > 0) {
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                        teacher.renderList();
+                        toast(`Imported ${count} students`);
+                    }
+                    input.value = '';
+                };
+                r.readAsText(f);
             }
         };
 
