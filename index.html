@@ -354,6 +354,21 @@
             <button id="btn-del-student" onclick="teacher.deleteStudent()" class="w-full mt-2 text-red-500 text-xs hover:underline hidden">Delete Student</button>
         </div>
     </div>
+    
+    <!-- Class Assignment Modal -->
+    <div id="modal-assign" class="fixed inset-0 z-[70] bg-black/40 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm flex flex-col max-h-[80vh]">
+            <h3 class="font-bold text-lg mb-2">Assign Classes</h3>
+            <p class="text-xs text-slate-500 mb-4" id="assign-teacher-name">Select classes for ...</p>
+            <div id="assign-checkboxes" class="space-y-2 overflow-y-auto mb-4 border p-2 rounded flex-1">
+                <!-- Checkboxes injected here -->
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <button onclick="document.getElementById('modal-assign').classList.add('hidden')" class="flex-1 py-2 border rounded text-slate-600">Cancel</button>
+                <button onclick="admin.saveAssignments()" class="flex-1 py-2 bg-primary text-white rounded font-bold">Save</button>
+            </div>
+        </div>
+    </div>
 
     <!-- LOGIC -->
     <script type="module">
@@ -386,6 +401,7 @@
             attendance: {}, // Date -> Record
             activeSubjects: {}, // Sub -> Bool
             editingStudentIdx: null,
+            editingTeacherIdx: null,
             unsubs: []
         };
 
@@ -492,9 +508,21 @@
                 const tList = document.getElementById('list-teachers');
                 tList.innerHTML = '';
                 s.teachers.forEach((t, i) => {
-                    tList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-                        <div><div class="font-bold">${t.name}</div><div class="text-xs text-slate-500">${t.email}</div></div>
-                        <button onclick="admin.delTeacher(${i})" class="text-red-500 text-xs"><i class="fas fa-trash"></i></button>
+                    tList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <div class="font-bold text-slate-800">${t.name}</div>
+                                <div class="text-xs text-slate-500">${t.email}</div>
+                                <div class="text-[10px] text-indigo-500 mt-1 font-medium">
+                                    <i class="fas fa-layer-group mr-1"></i>
+                                    ${t.assignedClasses && t.assignedClasses.length > 0 ? t.assignedClasses.join(', ') : 'No classes assigned'}
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="admin.openAssignModal(${i})" class="text-blue-600 text-xs border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">Manage Classes</button>
+                                <button onclick="admin.delTeacher(${i})" class="text-red-500 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
                     </div>`;
                 });
 
@@ -517,6 +545,13 @@
                 };
                 popSelect('rep-month-cls');
                 popSelect('report-class-select'); // if reused
+                
+                // Populate Teacher Creation Class Dropdown
+                const newTClass = document.getElementById('new-t-class');
+                if(newTClass) {
+                    newTClass.innerHTML = '<option value="">Primary Class (Optional)</option>';
+                    s.classes.forEach(c => newTClass.innerHTML += `<option value="${c}">${c}</option>`);
+                }
 
                 // Subjects
                 const sgList = document.getElementById('list-s-global');
@@ -563,6 +598,42 @@
             delTeacher: async (i) => {
                 if(confirm("Delete?")) { window.state.school.teachers.splice(i,1); await saveConfig(); admin.renderAll(); }
             },
+            
+            openAssignModal: (idx) => {
+                window.state.editingTeacherIdx = idx;
+                const t = window.state.school.teachers[idx];
+                document.getElementById('assign-teacher-name').innerText = `Assign classes to: ${t.name}`;
+                
+                const container = document.getElementById('assign-checkboxes');
+                container.innerHTML = '';
+                
+                window.state.school.classes.forEach(cls => {
+                    const isChecked = (t.assignedClasses || []).includes(cls) ? 'checked' : '';
+                    container.innerHTML += `
+                        <label class="flex items-center p-2 hover:bg-slate-50 rounded cursor-pointer border border-transparent hover:border-slate-100">
+                            <input type="checkbox" class="class-assign-cb rounded text-primary focus:ring-primary mr-3" value="${cls}" ${isChecked}>
+                            <span class="text-sm text-slate-700 font-medium">${cls}</span>
+                        </label>
+                    `;
+                });
+                
+                document.getElementById('modal-assign').classList.remove('hidden');
+            },
+            
+            saveAssignments: async () => {
+                if (window.state.editingTeacherIdx === null) return;
+                
+                const checkboxes = document.querySelectorAll('.class-assign-cb:checked');
+                const selected = Array.from(checkboxes).map(cb => cb.value);
+                
+                window.state.school.teachers[window.state.editingTeacherIdx].assignedClasses = selected;
+                await saveConfig();
+                
+                document.getElementById('modal-assign').classList.add('hidden');
+                admin.renderAll();
+                toast("Classes Assigned!");
+            },
+            
             addClass: async () => {
                 const n = document.getElementById('new-c-name').value.toUpperCase();
                 if(n && !window.state.school.classes.includes(n)) {
