@@ -27,7 +27,6 @@
     </script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -41,20 +40,18 @@
         .status-btn { transition: all 0.1s ease; }
         .status-btn:active { transform: scale(0.95); }
 
-        /* Sticky Columns for Mobile Table */
+        /* Sticky Columns */
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
         .sticky-col-2 { position: sticky; left: 60px; z-index: 10; }
     </style>
 </head>
 <body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
 
-    <!-- NOTIFICATIONS -->
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
 
-    <!-- ===================== LOGIN SCREEN ===================== -->
+    <!-- LOGIN SCREEN -->
     <div id="view-login" class="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-indigo-900 to-slate-900 p-4 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all duration-300 scale-100">
-            <!-- Header -->
             <div class="bg-primary p-8 text-center relative overflow-hidden">
                 <div class="absolute inset-0 bg-black/10"></div>
                 <div class="relative z-10">
@@ -66,63 +63,41 @@
                 </div>
             </div>
 
-            <!-- Tabs -->
             <div class="flex border-b border-slate-100">
                 <button onclick="ui.setLoginTab('teacher')" id="tab-login-teacher" class="flex-1 py-4 text-sm font-semibold text-primary border-b-2 border-primary bg-indigo-50/50 transition-colors">Teacher</button>
                 <button onclick="ui.setLoginTab('admin')" id="tab-login-admin" class="flex-1 py-4 text-sm font-medium text-slate-400 hover:text-slate-600 transition-colors">Administrator</button>
             </div>
 
-            <!-- Forms -->
             <div class="p-8">
                 <!-- Teacher Form -->
                 <div id="form-teacher" class="space-y-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Email</label>
-                        <div class="relative">
-                            <i class="fas fa-envelope absolute left-3 top-3 text-slate-400"></i>
-                            <input type="email" id="inp-teacher-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="teacher@forte.com">
-                        </div>
+                        <input type="email" id="inp-teacher-email" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="teacher@forte.com">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                        <div class="relative">
-                            <i class="fas fa-lock absolute left-3 top-3 text-slate-400"></i>
-                            <input type="password" id="inp-teacher-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
-                        </div>
+                        <input type="password" id="inp-teacher-pass" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="••••••••">
                     </div>
-                    
                     <div id="teacher-class-select-wrapper" class="hidden">
                          <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Select Class</label>
-                         <select id="inp-teacher-class" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm mb-2 focus:ring-2 focus:ring-green-500"></select>
-                         <button onclick="auth.enterClass()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-green-600/20 transition-all">
-                            Enter Class <i class="fas fa-arrow-right ml-2"></i>
-                         </button>
+                         <select id="inp-teacher-class" class="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm mb-2"></select>
+                         <button onclick="auth.enterClass()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg">Enter Class</button>
                     </div>
-
-                    <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg shadow-indigo-600/20 transition-all">
-                        Login
-                    </button>
+                    <button id="btn-teacher-login" onclick="auth.login('teacher')" class="w-full bg-primary hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg">Login</button>
                 </div>
 
                 <!-- Admin Form -->
                 <div id="form-admin" class="space-y-4 hidden">
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Admin Email</label>
-                        <div class="relative">
-                            <i class="fas fa-user-shield absolute left-3 top-3 text-slate-400"></i>
-                            <input type="email" id="inp-admin-email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="admin@forte.com">
-                        </div>
+                        <input type="email" id="inp-admin-email" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="admin@forte.com">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Password</label>
-                        <div class="relative">
-                            <i class="fas fa-key absolute left-3 top-3 text-slate-400"></i>
-                            <input type="password" id="inp-admin-pass" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm" placeholder="••••••••">
-                        </div>
+                        <input type="password" id="inp-admin-pass" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm" placeholder="••••••••">
                     </div>
-                    <button id="btn-admin-login" onclick="auth.login('admin')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg shadow-slate-800/20 transition-all">
-                        Access Dashboard
-                    </button>
+                    <button id="btn-admin-login" onclick="auth.login('admin')" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg shadow-lg">Access Dashboard</button>
                     <div class="text-center mt-4">
                         <button onclick="auth.resetPass()" class="text-xs text-primary hover:underline">Forgot Password?</button>
                     </div>
@@ -131,10 +106,8 @@
         </div>
     </div>
 
-    <!-- ===================== MAIN APP LAYOUT ===================== -->
+    <!-- MAIN APP -->
     <div id="view-app" class="flex-1 flex flex-col h-full hidden">
-        
-        <!-- Navbar -->
         <header class="bg-white border-b border-slate-200 px-4 py-3 flex justify-between items-center shadow-sm z-30 shrink-0">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-lg">F</div>
@@ -143,105 +116,62 @@
                     <p class="text-[10px] text-slate-500 font-medium" id="header-subtitle">Welcome</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
-                <button onclick="auth.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Logout">
-                    <i class="fas fa-power-off"></i>
-                </button>
-            </div>
+            <button onclick="auth.logout()" class="text-slate-400 hover:text-red-500 p-2 rounded-full hover:bg-red-50 transition-colors" title="Logout"><i class="fas fa-power-off"></i></button>
         </header>
 
-        <!-- Content Area -->
         <div class="flex-1 overflow-hidden relative flex">
-            
-            <!-- ADMIN SIDEBAR (Desktop / Mobile Toggle) -->
-            <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 absolute md:relative z-20 h-full transition-transform transform md:translate-x-0 -translate-x-full">
+            <!-- Sidebar -->
+            <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 h-full">
                 <div class="p-4 space-y-1">
-                    <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3 active-nav" id="nav-dashboard">
-                        <i class="fas fa-home w-5"></i> Dashboard
-                    </button>
-                    <button onclick="ui.switchAdminTab('teachers')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-teachers">
-                        <i class="fas fa-chalkboard-teacher w-5"></i> Teachers
-                    </button>
-                    <button onclick="ui.switchAdminTab('classes')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-classes">
-                        <i class="fas fa-layer-group w-5"></i> Classes
-                    </button>
-                    <button onclick="ui.switchAdminTab('subjects')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-subjects">
-                        <i class="fas fa-book w-5"></i> Subjects
-                    </button>
-                    <button onclick="ui.switchAdminTab('reports')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3" id="nav-reports">
-                        <i class="fas fa-file-csv w-5"></i> Reports
-                    </button>
+                    <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-dashboard"><i class="fas fa-home w-5"></i> Dashboard</button>
+                    <button onclick="ui.switchAdminTab('teachers')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-teachers"><i class="fas fa-chalkboard-teacher w-5"></i> Teachers</button>
+                    <button onclick="ui.switchAdminTab('classes')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-classes"><i class="fas fa-layer-group w-5"></i> Classes</button>
+                    <button onclick="ui.switchAdminTab('subjects')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-subjects"><i class="fas fa-book w-5"></i> Subjects</button>
+                    <button onclick="ui.switchAdminTab('reports')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 transition flex items-center gap-3" id="nav-reports"><i class="fas fa-file-csv w-5"></i> Reports</button>
                 </div>
             </aside>
 
-            <!-- MAIN SCROLLABLE AREA -->
             <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 w-full relative">
                 
-                <!-- TEACHER: ATTENDANCE VIEW -->
+                <!-- TEACHER ATTENDANCE -->
                 <div id="view-teacher-attendance" class="hidden max-w-6xl mx-auto">
-                    <!-- Controls -->
                     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 sticky top-0 z-20 space-y-3">
                         <div class="flex flex-col md:flex-row justify-between gap-3">
                             <div class="flex gap-2 items-center flex-wrap">
-                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
+                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 outline-none" onchange="teacher.loadData()">
                                 <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
                             </div>
                             <div class="flex gap-2 w-full md:w-auto">
-                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                                    <i class="fas fa-user-plus"></i> Add
-                                </button>
+                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2"><i class="fas fa-user-plus"></i> Add</button>
                                 <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <i class="fas fa-file-upload"></i> Import CSV
-                                    <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
+                                    <i class="fas fa-file-upload"></i> Import CSV <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
                                 </label>
-                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
-                                    <i class="fas fa-save"></i> Save Attendance
-                                </button>
+                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto"><i class="fas fa-save"></i> Save Attendance</button>
                             </div>
                         </div>
-                        
-                        <!-- Search & Filter -->
                         <div class="space-y-2">
-                             <div class="flex gap-2">
-                                 <input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()">
-                             </div>
+                             <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none" onkeyup="teacher.filter()"></div>
                              <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
                                  <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today:</div>
-                                 <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
-                                     <!-- Injected by JS -->
-                                 </div>
+                                 <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center"></div>
                              </div>
                         </div>
                     </div>
-
-                    <!-- List (Scrollable Table) -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
                         <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
-                                <!-- Dynamic Headers -->
-                            </thead>
+                            <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200"></thead>
                             <tbody id="att-list" class="divide-y divide-slate-100 text-slate-700"></tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- ADMIN: DASHBOARD -->
+                <!-- ADMIN DASHBOARD -->
                 <div id="view-admin-dashboard" class="hidden space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Teachers</div>
-                            <div class="text-3xl font-bold text-slate-800" id="stat-t">0</div>
-                        </div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Classes</div>
-                            <div class="text-3xl font-bold text-slate-800" id="stat-c">0</div>
-                        </div>
-                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                            <div class="text-slate-500 text-xs font-bold uppercase mb-1">Subjects</div>
-                            <div class="text-3xl font-bold text-slate-800" id="stat-s">0</div>
-                        </div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Teachers</div><div class="text-3xl font-bold text-slate-800" id="stat-t">0</div></div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Total Classes</div><div class="text-3xl font-bold text-slate-800" id="stat-c">0</div></div>
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200"><div class="text-slate-500 text-xs font-bold uppercase mb-1">Subjects</div><div class="text-3xl font-bold text-slate-800" id="stat-s">0</div></div>
                     </div>
-
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
                             <h3 class="font-bold text-slate-700">Live Attendance Feed</h3>
@@ -253,17 +183,9 @@
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-sm">
                                 <thead class="bg-slate-50 text-xs text-slate-500 uppercase">
-                                    <tr>
-                                        <th class="px-6 py-3">Class</th>
-                                        <th class="px-6 py-3 text-center text-green-600">Present</th>
-                                        <th class="px-6 py-3 text-center text-red-600">Absent</th>
-                                        <th class="px-6 py-3 text-center text-yellow-600">Leave</th>
-                                        <th class="px-6 py-3 text-center text-orange-500">S-Leave</th>
-                                    </tr>
+                                    <tr><th class="px-6 py-3">Class</th><th class="px-6 py-3 text-center text-green-600">Present</th><th class="px-6 py-3 text-center text-red-600">Absent</th><th class="px-6 py-3 text-center text-yellow-600">Leave</th><th class="px-6 py-3 text-center text-orange-500">S-Leave</th></tr>
                                 </thead>
-                                <tbody id="live-table-body">
-                                    <tr><td colspan="5" class="p-6 text-center text-slate-400">Loading live data...</td></tr>
-                                </tbody>
+                                <tbody id="live-table-body"></tbody>
                             </table>
                         </div>
                     </div>
@@ -303,7 +225,6 @@
                         </div>
                         <div id="list-s-global" class="flex flex-wrap gap-2"></div>
                     </div>
-                    
                     <div id="list-s-specific" class="space-y-4"></div>
                 </div>
 
@@ -327,7 +248,6 @@
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 class="font-bold text-lg mb-2">Data Management</h3>
-                        <p class="text-xs text-slate-500 mb-4">Restore will overwrite existing data.</p>
                         <div class="flex gap-3">
                              <button onclick="admin.backupData()" class="px-4 py-2 rounded border border-slate-300 text-slate-600 text-sm hover:bg-slate-50">Backup CSV</button>
                              <label class="px-4 py-2 rounded bg-yellow-50 text-yellow-700 text-sm border border-yellow-200 cursor-pointer hover:bg-yellow-100">
@@ -336,7 +256,6 @@
                         </div>
                     </div>
                 </div>
-
             </main>
         </div>
     </div>
@@ -360,9 +279,7 @@
         <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm flex flex-col max-h-[80vh]">
             <h3 class="font-bold text-lg mb-2">Assign Classes</h3>
             <p class="text-xs text-slate-500 mb-4" id="assign-teacher-name">Select classes for ...</p>
-            <div id="assign-checkboxes" class="space-y-2 overflow-y-auto mb-4 border p-2 rounded flex-1">
-                <!-- Checkboxes injected here -->
-            </div>
+            <div id="assign-checkboxes" class="space-y-2 overflow-y-auto mb-4 border p-2 rounded flex-1"></div>
             <div class="flex gap-2 shrink-0">
                 <button onclick="document.getElementById('modal-assign').classList.add('hidden')" class="flex-1 py-2 border rounded text-slate-600">Cancel</button>
                 <button onclick="admin.saveAssignments()" class="flex-1 py-2 bg-primary text-white rounded font-bold">Save</button>
@@ -394,12 +311,13 @@
         // --- GLOBAL STATE ---
         window.state = {
             user: null,
-            role: null, // 'admin' | 'teacher'
+            role: null, 
             school: { classes: [], teachers: [], subjects: [], class_subjects: {} },
             currentClass: null,
             students: [],
-            attendance: {}, // Date -> Record
-            activeSubjects: {}, // Sub -> Bool
+            attendance: {}, 
+            activeSubjects: {}, 
+            attendanceMode: 'subject',
             editingStudentIdx: null,
             editingTeacherIdx: null,
             unsubs: []
@@ -453,7 +371,6 @@
 
                 try {
                     await signInWithEmailAndPassword(auth, email, pass);
-                    // Role verification happens in onAuthStateChanged
                     localStorage.setItem('fcs_role_attempt', role); 
                 } catch(e) {
                     toast("Login Failed: " + e.code);
@@ -544,9 +461,8 @@
                      if(el) { el.innerHTML = ''; s.classes.forEach(c => el.innerHTML += `<option>${c}</option>`); }
                 };
                 popSelect('rep-month-cls');
-                popSelect('report-class-select'); // if reused
+                popSelect('report-class-select'); 
                 
-                // Populate Teacher Creation Class Dropdown
                 const newTClass = document.getElementById('new-t-class');
                 if(newTClass) {
                     newTClass.innerHTML = '<option value="">Primary Class (Optional)</option>';
@@ -583,11 +499,9 @@
                 
                 if(!n || !e || !p) return toast("Fill all");
                 
-                // Create Auth
                 try {
                     const tempApp = initializeApp(firebaseConfig, "Secondary");
                     await createUserWithEmailAndPassword(getAuth(tempApp), e, p);
-                    // No signOut needed on temp instance really, just garbage collect
                 } catch(err) { return alert(err.message); }
 
                 window.state.school.teachers.push({name:n, email:e, assignedClasses: c ? [c]: []});
@@ -680,21 +594,28 @@
             initLive: () => {
                 const tbody = document.getElementById('live-table-body');
                 const d = document.getElementById('live-date').value || new Date().toISOString().split('T')[0];
+                if (document.getElementById('live-date').value === '') document.getElementById('live-date').value = d;
+                
+                // Clear entire table first - IMPORTANT: This resets the DOM completely
                 tbody.innerHTML = '';
                 
                 window.state.school.classes.forEach(cls => {
-                    const rid = `live-${cls}`;
-                    tbody.innerHTML += `<tr id="${rid}" class="border-b border-slate-50"><td class="px-6 py-3 font-bold">${cls}</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td></tr>`;
-                    
-                    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`), snap => {
+                    const rid = `live-${cls.replace(/\s+/g, '-')}`;
+                    // Create row element properly instead of innerHTML += which kills listeners
+                    const tr = document.createElement('tr');
+                    tr.id = rid;
+                    tr.className = "border-b border-slate-50";
+                    tr.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td><td class="text-center">-</td>`;
+                    tbody.appendChild(tr);
+
+                    const unsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`), snap => {
                          const el = document.getElementById(rid);
                          if(!el) return;
+                         
                          if(snap.exists()) {
                              const recs = snap.data().records;
-                             // Logic for counts
                              let p=0, a=0, l=0, sl=0;
                              Object.values(recs).forEach(r => {
-                                 // Sum status across subjects
                                  const vals = Object.values(r);
                                  if(vals.includes('P')) p++;
                                  else if(vals.includes('L')) l++;
@@ -706,19 +627,19 @@
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td colspan="4" class="text-center text-xs text-slate-400">Pending</td>`;
                          }
                     });
+                    
+                    // Track unsub to clear later
+                    window.state.unsubs.push(unsub);
                 });
             },
             viewClass: (cls) => {
-                // HACK: Piggyback on teacher view but with admin power
                 window.state.currentClass = cls;
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('admin-sidebar').classList.add('hidden'); // Hide sidebar to focus
-                
+                document.getElementById('admin-sidebar').classList.add('hidden'); 
                 document.getElementById('header-title').innerText = cls;
                 document.getElementById('header-subtitle').innerText = "Admin View Mode";
-                
-                window.teacher.init(); // Re-use teacher logic
+                window.teacher.init(); 
             },
             
             // DOWNLOADS
@@ -732,11 +653,9 @@
                 
                 let csv = "Roll,Name,Total Lectures,Attended (P),Absents (A),Leaves (L),Short Leaves (S/L)\n";
                 
-                // 1. Get Students
                 const cSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', cls));
                 const stus = cSnap.exists() ? cSnap.data().students : [];
                 
-                // 2. Get Data
                 const atts = {};
                 await Promise.all(Array.from({length:days}, (_,i) => {
                     const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
@@ -744,7 +663,6 @@
                         .then(s => atts[d] = s.exists() ? s.data().records : {});
                 }));
                 
-                // 3. Build Summary
                 stus.forEach(s => {
                     let totalP=0, totalA=0, totalL=0, totalSL=0, totalLec=0;
                     
@@ -753,7 +671,7 @@
                         const rec = atts[d]?.[s.id];
                         if(rec) {
                             Object.values(rec).forEach(val => {
-                                if(val !== '-') totalLec++; // Count active slots
+                                if(val !== '-') totalLec++; 
                                 if(val === 'P') totalP++;
                                 else if(val === 'A') totalA++;
                                 else if(val === 'L') totalL++;
@@ -800,42 +718,31 @@
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-teacher-attendance').classList.remove('hidden');
-                
-                // Header
                 document.getElementById('header-title').innerText = window.state.currentClass;
-                
-                // Setup Date
                 const d = new Date().toISOString().split('T')[0];
                 document.getElementById('att-date').value = d;
                 
-                // Listen to class data
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
                     window.state.students = snap.exists() ? (snap.data().students || []) : [];
                     teacher.renderList();
                 });
-                
                 teacher.loadData();
             },
             
             loadData: () => {
                 const d = document.getElementById('att-date').value;
-                // Determine subjects
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
                 
-                // Render filters
                 const filter = document.getElementById('att-subjects-filter');
                 filter.innerHTML = '';
                 subs.forEach(s => {
-                    // Default active if undefined
                     if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
-                    
                     const active = window.state.activeSubjects[s];
                     filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}">${s}</button>`;
                 });
                 
-                // Fetch attendance
                 if(window.state.dailyUnsub) window.state.dailyUnsub();
                 window.state.dailyUnsub = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`), snap => {
                     window.state.attendance = snap.exists() ? snap.data().records : {};
@@ -845,22 +752,16 @@
             
             toggleSub: (s) => {
                 window.state.activeSubjects[s] = !window.state.activeSubjects[s];
-                teacher.renderList(); 
+                teacher.loadData(); 
             },
             
-            // --- ROW ACTIONS FOR BULK UPDATE ---
             setRowStatus: (sid, status) => {
                 if(!window.state.attendance[sid]) window.state.attendance[sid] = {};
-                
-                // Apply to ALL currently ACTIVE subjects for this student
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
-                
                 subs.forEach(sub => {
-                    if (window.state.activeSubjects[sub] !== false) {
-                        window.state.attendance[sid][sub] = status;
-                    }
+                    if (window.state.activeSubjects[sub] !== false) window.state.attendance[sid][sub] = status;
                 });
                 teacher.renderList();
             },
@@ -869,26 +770,17 @@
                 const list = document.getElementById('att-list');
                 const thead = document.getElementById('att-thead');
                 const search = document.getElementById('att-search').value.toLowerCase();
-                
                 document.getElementById('student-count').innerText = `${window.state.students.length} Students`;
                 
-                // 1. Build Header
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
                 const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
                 
-                let headerHTML = `<tr>
-                                    <th class="px-4 py-3 w-16 text-center sticky-col-1 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Roll</th>
-                                    <th class="px-4 py-3 w-40 sticky-col-2 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                
-                activeSubs.forEach(sub => {
-                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`;
-                });
+                let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center sticky-col-1 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Roll</th><th class="px-4 py-3 w-40 sticky-col-2 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
+                activeSubs.forEach(sub => { headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`; });
                 headerHTML += `</tr>`;
                 thead.innerHTML = headerHTML;
-                
-                // 2. Build Body
                 list.innerHTML = '';
                 
                 const getBtnClass = (val, current) => {
@@ -910,26 +802,21 @@
                                 <div class="flex justify-between items-center">
                                     <span onclick="teacher.editStudent(${idx})">${s.name}</span>
                                     <div class="flex gap-1 ml-2">
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-200 hover:bg-green-100" title="All Present">P</button>
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200 hover:bg-red-100" title="All Absent">A</button>
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-200 hover:bg-green-100" title="All P">P</button>
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200 hover:bg-red-100" title="All A">A</button>
                                     </div>
                                 </div>
                             </td>`;
-                            
                         const rec = window.state.attendance[s.id] || {};
-
                         activeSubs.forEach(sub => {
-                            const status = rec[sub] || 'P'; // Default
-                            row += `<td class="px-4 py-2 text-center">
-                                <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
-                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
-                                </div>
-                            </td>`;
+                            const status = rec[sub] || 'P'; 
+                            row += `<td class="px-4 py-2 text-center"><div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
+                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
+                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
+                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
+                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
+                            </div></td>`;
                         });
-                        
                         row += `</tr>`;
                         list.innerHTML += row;
                     });
@@ -944,9 +831,7 @@
             save: async () => {
                 const d = document.getElementById('att-date').value;
                 const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${window.state.currentClass}_${d}`);
-                
-                // Ensure defaults
-                const finalData = JSON.parse(JSON.stringify(window.state.attendance)); // Deep copy
+                const finalData = JSON.parse(JSON.stringify(window.state.attendance)); 
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
@@ -968,7 +853,6 @@
             
             filter: () => teacher.renderList(),
             
-            // Student Mgmt
             openAddStudentModal: () => {
                 window.state.editingStudentIdx = null;
                 document.getElementById('modal-student-title').innerText = "Add Student";
@@ -992,16 +876,12 @@
                 const r = document.getElementById('mod-stu-roll').value;
                 const n = document.getElementById('mod-stu-name').value;
                 if(!r || !n) return alert("Fill all fields");
-
                 if (window.state.editingStudentIdx !== null) {
-                    // Edit
                     window.state.students[window.state.editingStudentIdx].rollNo = r;
                     window.state.students[window.state.editingStudentIdx].name = n;
                 } else {
-                    // Add
                     window.state.students.push({id: Date.now().toString(), rollNo: r, name: n});
                 }
-                
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
                 document.getElementById('modal-student').classList.add('hidden');
                 teacher.renderList();
@@ -1043,43 +923,31 @@
         };
 
         // --- BOOTSTRAP ---
-        // 1. Listen for Auth
         onAuthStateChanged(auth, (user) => {
             window.state.user = user;
             if (user) {
-                // Load config first
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), (snap) => {
                     if(snap.exists()) {
                         window.state.school = snap.data();
-                        
-                        // Check local storage for role persistence
                         const role = localStorage.getItem('fcs_role_attempt');
-                        
                         if(role === 'admin') {
                             admin.init();
                         } else if (localStorage.getItem('fcs_current_class')) {
-                            // Re-hydrate teacher session
                             window.state.currentClass = localStorage.getItem('fcs_current_class');
                             teacher.init();
                         } else {
-                            // Teacher logged in but class not selected
-                             // Populate class dropdown
                              const teacherData = window.state.school.teachers.find(t => t.email.toLowerCase() === user.email.toLowerCase());
                              if(teacherData) {
                                  const sel = document.getElementById('inp-teacher-class');
                                  sel.innerHTML = '';
                                  teacherData.assignedClasses.forEach(c => sel.innerHTML += `<option>${c}</option>`);
-                                 
-                                 // Show class select UI
                                  document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
                                  document.getElementById('btn-teacher-login').classList.add('hidden');
-                                 // Inputs disabled
                                  document.getElementById('inp-teacher-email').disabled = true;
                                  document.getElementById('inp-teacher-pass').disabled = true;
                              }
                         }
                     } else {
-                        // First run init
                         setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
                     }
                 });
@@ -1088,7 +956,6 @@
                 document.getElementById('view-app').classList.add('hidden');
             }
         });
-
     </script>
 </body>
 </html>
