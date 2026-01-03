@@ -515,6 +515,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <button onclick="admin.openAssignModal(${i})" class="text-blue-600 text-xs border border-blue-200 px-2 py-1 rounded hover:bg-blue-50">Manage Classes</button>
+                                <button onclick="admin.resetTeacherPass('${t.email}')" class="text-orange-500 text-xs border border-orange-200 px-2 py-1 rounded hover:bg-orange-50">Reset Pass</button>
                                 <button onclick="admin.delTeacher(${i})" class="text-red-500 text-xs border border-red-200 px-2 py-1 rounded hover:bg-red-50"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
@@ -589,6 +590,14 @@
             },
             delTeacher: async (i) => {
                 if(confirm("Delete?")) { window.state.school.teachers.splice(i,1); await saveConfig(); admin.renderAll(); }
+            },
+            resetTeacherPass: async (email) => {
+                if(confirm(`Send password reset email to ${email}?`)) {
+                    try {
+                        await sendPasswordResetEmail(auth, email);
+                        toast("Reset email sent!");
+                    } catch(e) { alert(e.message); }
+                }
             },
             
             openAssignModal: (idx) => {
@@ -674,16 +683,12 @@
                 const d = document.getElementById('live-date').value || new Date().toISOString().split('T')[0];
                 if (document.getElementById('live-date').value === '') document.getElementById('live-date').value = d;
                 
-                // Clear entire table first - IMPORTANT: This resets the DOM completely
                 tbody.innerHTML = '';
-                
-                // Clear previous subscriptions
                 window.state.unsubs.forEach(unsub => unsub());
                 window.state.unsubs = [];
 
                 window.state.school.classes.forEach(cls => {
                     const rid = `live-${cls.replace(/\s+/g, '-')}`;
-                    // Create row element properly instead of innerHTML += which kills listeners
                     const tr = document.createElement('tr');
                     tr.id = rid;
                     tr.className = "border-b border-slate-50";
@@ -698,7 +703,6 @@
                              const recs = snap.data().records;
                              let p=0, a=0, l=0, sl=0;
                              Object.values(recs).forEach(r => {
-                                 // Sum status across subjects
                                  const vals = Object.values(r);
                                  if(vals.includes('P')) p++;
                                  else if(vals.includes('L')) l++;
@@ -711,7 +715,6 @@
                          }
                     });
                     
-                    // Track unsub to clear later
                     window.state.unsubs.push(unsub);
                 });
             },
