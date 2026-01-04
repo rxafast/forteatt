@@ -226,7 +226,7 @@
                             <div class="space-y-2">
                                 <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()"></div>
                                 <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
-                                    <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today (Tap to dim):</div>
+                                    <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today (Tap to show/hide):</div>
                                     <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
                                         <!-- Injected by JS -->
                                     </div>
@@ -887,7 +887,6 @@
             init: () => {
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
-                // Use correct ID for wrapper
                 document.getElementById('view-teacher-wrapper').classList.remove('hidden');
                 
                 // Header
@@ -992,12 +991,12 @@
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
+                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
                 
                 // --- DESKTOP HEADER ---
                 let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center bg-slate-100 border-b border-r border-slate-200">Roll</th><th class="px-4 py-3 w-40 bg-slate-100 border-b border-r border-slate-200">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                subs.forEach(sub => { 
-                    const isActive = window.state.activeSubjects[sub] !== false;
-                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${isActive?'':'dimmed-col'}">${sub}</th>`; 
+                activeSubs.forEach(sub => { 
+                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`; 
                 });
                 headerHTML += `</tr>`;
                 deskHead.innerHTML = headerHTML;
@@ -1047,12 +1046,11 @@
                             </div>
                             <div class="space-y-2">`;
 
-                        subs.forEach(sub => {
-                            const isActive = window.state.activeSubjects[sub] !== false;
-                            const status = rec[sub] || (isActive ? 'P' : '-'); 
+                        activeSubs.forEach(sub => {
+                            const status = rec[sub] || 'P'; // Default
                             
                             // Desktop Cell
-                            dRow += `<td class="px-4 py-2 text-center ${isActive?'':'dimmed-cell'}">
+                            dRow += `<td class="px-4 py-2 text-center">
                                 <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
                                     <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
                                     <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
@@ -1062,18 +1060,16 @@
                             </td>`;
                             
                             // Mobile Row inside Card
-                            if (isActive) {
-                                mCard += `
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-bold text-slate-500 w-16">${sub}</span>
-                                    <div class="flex border border-slate-200 rounded overflow-hidden flex-1 max-w-[200px]">
-                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
-                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
-                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
-                                        <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
-                                    </div>
-                                </div>`;
-                            }
+                            mCard += `
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 w-16">${sub}</span>
+                                <div class="flex border border-slate-200 rounded overflow-hidden flex-1 max-w-[200px]">
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
+                                </div>
+                            </div>`;
                         });
                         
                         dRow += `</tr>`;
@@ -1334,6 +1330,7 @@
                 document.getElementById('view-app').classList.add('hidden');
             }
         });
+
     </script>
 </body>
 </html>
