@@ -45,8 +45,13 @@
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
         .sticky-col-2 { position: sticky; left: 60px; z-index: 10; }
         
-        /* Dimmed State */
-        .dimmed-col { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+        /* Dimmed State for Table Cells only */
+        .dimmed-cell { opacity: 0.3; pointer-events: none; filter: grayscale(100%); background-color: #f1f5f9; }
+        
+        /* Toggle Button State */
+        .filter-btn-active { @apply bg-indigo-100 text-indigo-700 border-indigo-200; }
+        .filter-btn-inactive { @apply bg-slate-100 text-slate-400 border-slate-200 opacity-60; }
+        .filter-btn-inactive:hover { @apply opacity-100; }
     </style>
 </head>
 <body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
@@ -156,7 +161,7 @@
         <!-- Content Area -->
         <div class="flex-1 overflow-hidden relative flex">
             
-            <!-- ADMIN SIDEBAR (Desktop / Mobile Toggle) -->
+            <!-- ADMIN SIDEBAR -->
             <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 absolute md:relative z-20 h-full transition-transform transform md:translate-x-0 -translate-x-full">
                 <div class="p-4 space-y-1">
                     <button onclick="ui.switchAdminTab('dashboard')" class="w-full text-left px-4 py-3 rounded-lg hover:bg-slate-800 hover:text-white transition flex items-center gap-3 active-nav" id="nav-dashboard">
@@ -181,10 +186,10 @@
             <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 w-full relative">
                 
                 <!-- TEACHER: CLASS VIEW WRAPPER -->
-                <div id="view-teacher-wrapper" class="hidden max-w-6xl mx-auto flex flex-col h-full">
+                <div id="view-teacher-wrapper" class="hidden max-w-full mx-auto flex flex-col h-full">
                     
                     <!-- Class Tabs -->
-                    <div class="flex space-x-1 rounded-xl bg-slate-200 p-1 mb-4 shrink-0">
+                    <div class="flex space-x-1 rounded-xl bg-slate-200 p-1 mb-4 shrink-0 max-w-3xl mx-auto w-full">
                         <button onclick="teacher.switchView('mark')" id="btn-tab-mark" class="w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow">
                             Mark Attendance
                         </button>
@@ -201,13 +206,6 @@
                                 <div class="flex gap-2 items-center flex-wrap">
                                     <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
                                     <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
-                                    
-                                    <!-- Mode Toggle -->
-                                    <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 hidden">
-                                        <!-- Hidden for now based on new reqs, defaulting to subject matrix -->
-                                        <button onclick="teacher.setMode('subject')" id="btn-mode-subject" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-primary transition">Subject Wise</button>
-                                        <button onclick="teacher.setMode('daily')" id="btn-mode-daily" class="px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition">Day Wise</button>
-                                    </div>
                                 </div>
                                 <div class="flex gap-2 w-full md:w-auto">
                                     <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
@@ -249,26 +247,19 @@
                     <!-- TAB 2: CLASS REPORT -->
                     <div id="tab-content-report" class="flex-1 flex flex-col hidden overflow-hidden">
                         <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0 flex justify-between items-center">
-                             <h2 class="font-bold text-slate-700">Monthly Attendance Report</h2>
+                             <h2 class="font-bold text-slate-700">Monthly Subject Report</h2>
                              <div class="flex gap-2">
                                  <input type="month" id="teacher-rep-month" class="border rounded px-3 py-2 text-sm" onchange="teacher.loadReport()">
                                  <button onclick="teacher.loadReport()" class="bg-primary text-white px-4 py-2 rounded text-sm font-bold"><i class="fas fa-sync-alt mr-2"></i> Refresh</button>
                              </div>
                         </div>
                         <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1">
-                            <table class="w-full text-left text-sm">
-                                <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold sticky top-0 z-10 border-b">
-                                    <tr>
-                                        <th class="px-4 py-3 w-20">Roll</th>
-                                        <th class="px-4 py-3">Name</th>
-                                        <th class="px-4 py-3 text-center">Lecture Attended</th>
-                                        <th class="px-4 py-3 text-center">Lecture %</th>
-                                        <th class="px-4 py-3 text-center">Days Present</th>
-                                        <th class="px-4 py-3 text-center">Day %</th>
-                                    </tr>
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead id="rep-thead" class="bg-slate-50 text-slate-500 uppercase text-xs font-bold sticky top-0 z-10 border-b">
+                                   <!-- Dynamic Report Header -->
                                 </thead>
                                 <tbody id="teacher-rep-list" class="divide-y divide-slate-100">
-                                    <tr><td colspan="6" class="p-6 text-center text-slate-400">Select a month to view report</td></tr>
+                                    <tr><td class="p-6 text-center text-slate-400">Select a month to view report</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -916,7 +907,11 @@
                 subs.forEach(s => {
                     if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
                     const active = window.state.activeSubjects[s];
-                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'} ${active ? '' : 'dimmed-col'}">${s}</button>`;
+                    // Update button styling for toggle
+                    const activeClass = "bg-indigo-100 text-indigo-700 border-indigo-200 filter-btn-active";
+                    const inactiveClass = "bg-slate-100 text-slate-400 border-slate-200 filter-btn-inactive";
+                    
+                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? activeClass : inactiveClass}">${s}</button>`;
                 });
                 
                 if(window.state.dailyUnsub) window.state.dailyUnsub();
@@ -951,10 +946,13 @@
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
-                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
+                // Removed filter to show all columns, dimming inactive ones
                 
                 let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center sticky-col-1 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Roll</th><th class="px-4 py-3 w-40 sticky-col-2 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                activeSubs.forEach(sub => { headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${window.state.activeSubjects[sub]?'':'dimmed-col'}">${sub}</th>`; });
+                subs.forEach(sub => { 
+                    const isActive = window.state.activeSubjects[sub] !== false;
+                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${isActive?'':'dimmed-col'}">${sub}</th>`; 
+                });
                 headerHTML += `</tr>`;
                 thead.innerHTML = headerHTML;
                 list.innerHTML = '';
@@ -989,7 +987,8 @@
                             const isActive = window.state.activeSubjects[sub] !== false;
                             const status = rec[sub] || (isActive ? 'P' : '-'); 
                             
-                            row += `<td class="px-4 py-2 text-center ${isActive?'':'dimmed-col'}">
+                            // Apply dimmed-cell class if inactive
+                            row += `<td class="px-4 py-2 text-center ${isActive?'':'dimmed-cell'}">
                                 <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
                                     <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
                                     <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
@@ -1037,62 +1036,72 @@
             // --- CLASS REPORT LOGIC ---
             loadReport: async () => {
                 const tbody = document.getElementById('teacher-rep-list');
+                const thead = document.getElementById('rep-thead');
                 const m = document.getElementById('teacher-rep-month').value;
                 const cls = window.state.currentClass;
                 
                 if(!m) return;
-                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Calculating...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="100%" class="p-6 text-center text-slate-400">Calculating...</td></tr>';
                 
                 const [y, mm] = m.split('-');
                 const days = new Date(y, mm, 0).getDate();
                 const atts = {};
                 
-                // Fetch all days
+                // 1. Fetch data
                 await Promise.all(Array.from({length:days}, (_,i) => {
                     const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
                     return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
                         .then(s => atts[d] = s.exists() ? s.data().records : {});
                 }));
                 
+                // 2. Build Header with Subjects
+                const glob = window.state.school.subjects || [];
+                const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
+                const subs = Array.from(new Set([...glob, ...spec]));
+                
+                let headerHTML = `<tr>
+                                    <th class="px-4 py-3 w-20 sticky-col-1 bg-slate-100 border-b border-r border-slate-200">Roll</th>
+                                    <th class="px-4 py-3 sticky-col-2 bg-slate-100 border-b border-r border-slate-200">Name</th>`;
+                
+                subs.forEach(sub => {
+                    headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 min-w-[120px]">${sub}</th>`;
+                });
+                headerHTML += `<th class="px-4 py-3 text-center border-b border-slate-200 bg-slate-100">Total %</th></tr>`;
+                thead.innerHTML = headerHTML;
+                
                 tbody.innerHTML = '';
                 
                 window.state.students.forEach(s => {
-                    let totalLec=0, totalP=0, daysPresent=0, daysTotal=0;
-                    
-                    for(let i=1; i<=days; i++) {
-                        const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
-                        const rec = atts[d]?.[s.id];
-                        if(rec) {
-                            let dayHasP = false;
-                            Object.values(rec).forEach(val => {
-                                if(val !== '-') {
-                                    totalLec++;
-                                    if(val === 'P') { totalP++; dayHasP = true; }
-                                    // S/L counts as P for day presence? Usually yes, or half. Assuming P logic for now.
-                                    if(val === 'S/L') dayHasP = true; 
-                                }
-                            });
-                            // If any subject was recorded, day counts as conducted
-                            if(Object.values(rec).some(v => v !== '-')) {
-                                daysTotal++;
-                                if(dayHasP) daysPresent++;
+                    let totalP = 0, totalLec = 0;
+                    let rowHTML = `<tr class="border-b border-slate-50 hover:bg-slate-50">
+                        <td class="px-4 py-3 font-mono font-bold text-slate-600 sticky-col-1 bg-white border-r border-slate-100">${s.rollNo}</td>
+                        <td class="px-4 py-3 font-medium text-slate-800 sticky-col-2 bg-white border-r border-slate-100">${s.name}</td>`;
+                        
+                    subs.forEach(sub => {
+                        let subP = 0, subTotal = 0;
+                        for(let i=1; i<=days; i++) {
+                            const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                            const rec = atts[d]?.[s.id];
+                            if(rec && rec[sub] && rec[sub] !== '-') {
+                                subTotal++;
+                                if(rec[sub] === 'P' || rec[sub] === 'S/L') subP++; // Assuming SL counts
                             }
                         }
-                    }
+                        totalP += subP;
+                        totalLec += subTotal;
+                        const pct = subTotal > 0 ? Math.round((subP/subTotal)*100) : 0;
+                        const color = pct < 75 ? 'text-red-500' : 'text-green-600';
+                        
+                        rowHTML += `<td class="px-4 py-3 text-center text-xs">
+                            <div class="font-bold ${color}">${pct}%</div>
+                            <div class="text-slate-400 text-[10px]">${subP}/${subTotal}</div>
+                        </td>`;
+                    });
                     
-                    const lecPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
-                    const dayPct = daysTotal > 0 ? Math.round((daysPresent/daysTotal)*100) : 0;
+                    const overallPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
+                    rowHTML += `<td class="px-4 py-3 text-center font-bold text-blue-600 bg-slate-50">${overallPct}%</td></tr>`;
                     
-                    tbody.innerHTML += `
-                        <tr class="border-b border-slate-50 hover:bg-slate-50">
-                            <td class="px-4 py-3 font-mono font-bold text-slate-600">${s.rollNo}</td>
-                            <td class="px-4 py-3">${s.name}</td>
-                            <td class="px-4 py-3 text-center text-slate-600">${totalP} / ${totalLec}</td>
-                            <td class="px-4 py-3 text-center font-bold ${lecPct<75?'text-red-500':'text-green-600'}">${lecPct}%</td>
-                            <td class="px-4 py-3 text-center text-slate-600">${daysPresent} / ${daysTotal}</td>
-                            <td class="px-4 py-3 text-center font-bold text-blue-600">${dayPct}%</td>
-                        </tr>
-                    `;
+                    tbody.innerHTML += rowHTML;
                 });
             },
 
