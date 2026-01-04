@@ -1159,4 +1159,121 @@
                     subs.forEach(sub => {
                         const st = rec[sub] || '-';
                         let color = 'text-slate-300';
-                        let
+                        let bg = '';
+                        if(st==='P') { color='text-green-700'; bg='bg-green-50'; }
+                        if(st==='A') { color='text-red-700'; bg='bg-red-50'; }
+                        if(st==='L') { color='text-yellow-700'; bg='bg-yellow-50'; }
+                        if(st==='S/L') { color='text-orange-700'; bg='bg-orange-50'; }
+                        r += `<td class="text-center text-xs font-bold ${color} ${bg} border-l border-slate-50">${st}</td>`;
+                    });
+                    r += `</tr>`;
+                    tbody.innerHTML += r;
+                });
+            },
+
+            openAddStudentModal: () => {
+                window.state.editingStudentIdx = null;
+                document.getElementById('modal-student-title').innerText = "Add Student";
+                document.getElementById('mod-stu-roll').value = "";
+                document.getElementById('mod-stu-name').value = "";
+                document.getElementById('btn-del-student').classList.add('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
+            },
+
+            editStudent: (idx) => {
+                window.state.editingStudentIdx = idx;
+                const s = window.state.students[idx];
+                document.getElementById('modal-student-title').innerText = "Edit Student";
+                document.getElementById('mod-stu-roll').value = s.rollNo;
+                document.getElementById('mod-stu-name').value = s.name;
+                document.getElementById('btn-del-student').classList.remove('hidden');
+                document.getElementById('modal-student').classList.remove('hidden');
+            },
+
+            saveStudent: async () => {
+                const r = document.getElementById('mod-stu-roll').value;
+                const n = document.getElementById('mod-stu-name').value;
+                if(!r || !n) return alert("Fill all fields");
+                if (window.state.editingStudentIdx !== null) {
+                    window.state.students[window.state.editingStudentIdx].rollNo = r;
+                    window.state.students[window.state.editingStudentIdx].name = n;
+                } else {
+                    window.state.students.push({id: Date.now().toString(), rollNo: r, name: n});
+                }
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                document.getElementById('modal-student').classList.add('hidden');
+                teacher.renderList();
+                toast(window.state.editingStudentIdx !== null ? "Updated" : "Added");
+            },
+
+            deleteStudent: async () => {
+                if(confirm("Delete student?")) {
+                    window.state.students.splice(window.state.editingStudentIdx, 1);
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                    document.getElementById('modal-student').classList.add('hidden');
+                    teacher.renderList();
+                }
+            },
+
+            importFile: (input) => {
+                const f = input.files[0];
+                if(!f) return;
+                const r = new FileReader();
+                r.onload = async (e) => {
+                    const lines = e.target.result.split('\n');
+                    let count = 0;
+                    lines.forEach(l => {
+                        const [roll, name] = l.split(',');
+                        if(roll && name) {
+                            window.state.students.push({id: Date.now()+Math.random().toString(), rollNo: roll.trim(), name: name.trim()});
+                            count++;
+                        }
+                    });
+                    if(count > 0) {
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
+                        teacher.renderList();
+                        toast(`Imported ${count} students`);
+                    }
+                    input.value = '';
+                };
+                r.readAsText(f);
+            }
+        };
+
+        // --- BOOTSTRAP ---
+        onAuthStateChanged(auth, (user) => {
+            window.state.user = user;
+            if (user) {
+                onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), (snap) => {
+                    if(snap.exists()) {
+                        window.state.school = snap.data();
+                        const role = localStorage.getItem('fcs_role_attempt');
+                        if(role === 'admin') {
+                            admin.init();
+                        } else if (localStorage.getItem('fcs_current_class')) {
+                            window.state.currentClass = localStorage.getItem('fcs_current_class');
+                            teacher.init();
+                        } else {
+                             const teacherData = window.state.school.teachers.find(t => t.email.toLowerCase() === user.email.toLowerCase());
+                             if(teacherData) {
+                                 const sel = document.getElementById('inp-teacher-class');
+                                 sel.innerHTML = '';
+                                 teacherData.assignedClasses.forEach(c => sel.innerHTML += `<option>${c}</option>`);
+                                 document.getElementById('teacher-class-select-wrapper').classList.remove('hidden');
+                                 document.getElementById('btn-teacher-login').classList.add('hidden');
+                                 document.getElementById('inp-teacher-email').disabled = true;
+                                 document.getElementById('inp-teacher-pass').disabled = true;
+                             }
+                        }
+                    } else {
+                        setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
+                    }
+                });
+            } else {
+                document.getElementById('view-login').classList.remove('hidden');
+                document.getElementById('view-app').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
