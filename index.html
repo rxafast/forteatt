@@ -282,7 +282,6 @@
                             </table>
                         </div>
                     </div>
-
                 </div>
 
                 <!-- ADMIN: DASHBOARD -->
@@ -362,7 +361,7 @@
                         <h3 class="font-bold text-slate-700 mb-3 border-b pb-2">Global Subjects (All Classes)</h3>
                         <div class="flex gap-2 mb-4">
                             <input type="text" id="new-s-global" placeholder="Subject Code (e.g. ENG)" class="border rounded-lg p-2 text-sm uppercase flex-1">
-                            <button onclick="admin.addGlobalSubject()" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Add</button>
+                            <button onclick="admin.addGlobalSub()" class="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-bold">Add</button>
                         </div>
                         <div id="list-s-global" class="flex flex-wrap gap-2"></div>
                     </div>
@@ -398,7 +397,6 @@
                         </div>
                     </div>
                 </div>
-
             </main>
         </div>
     </div>
@@ -576,14 +574,14 @@
                 if(!s) return;
                 
                 // Stats
-                document.getElementById('stat-t').innerText = s.teachers.length;
-                document.getElementById('stat-c').innerText = s.classes.length;
-                document.getElementById('stat-s').innerText = s.subjects.length;
+                document.getElementById('stat-t').innerText = (s.teachers || []).length;
+                document.getElementById('stat-c').innerText = (s.classes || []).length;
+                document.getElementById('stat-s').innerText = (s.subjects || []).length;
 
                 // Lists
                 const tList = document.getElementById('list-teachers');
                 tList.innerHTML = '';
-                s.teachers.forEach((t, i) => {
+                (s.teachers || []).forEach((t, i) => {
                     tList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200">
                         <div class="flex justify-between items-start mb-2">
                             <div>
@@ -605,7 +603,7 @@
 
                 const cList = document.getElementById('list-classes');
                 cList.innerHTML = '';
-                s.classes.forEach((c, i) => {
+                (s.classes || []).forEach((c, i) => {
                     cList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center">
                         <span class="font-bold">${c}</span>
                         <div class="flex gap-2">
@@ -618,7 +616,7 @@
                 // Dropdowns
                 const popSelect = (id) => {
                      const el = document.getElementById(id);
-                     if(el) { el.innerHTML = ''; s.classes.forEach(c => el.innerHTML += `<option>${c}</option>`); }
+                     if(el) { el.innerHTML = ''; (s.classes || []).forEach(c => el.innerHTML += `<option>${c}</option>`); }
                 };
                 popSelect('rep-month-cls');
                 popSelect('report-class-select'); 
@@ -626,19 +624,19 @@
                 const newTClass = document.getElementById('new-t-class');
                 if(newTClass) {
                     newTClass.innerHTML = '<option value="">Primary Class (Optional)</option>';
-                    s.classes.forEach(c => newTClass.innerHTML += `<option value="${c}">${c}</option>`);
+                    (s.classes || []).forEach(c => newTClass.innerHTML += `<option value="${c}">${c}</option>`);
                 }
 
                 // Subjects
                 const sgList = document.getElementById('list-s-global');
                 sgList.innerHTML = '';
-                s.subjects.forEach((sub, i) => {
+                (s.subjects || []).forEach((sub, i) => {
                     sgList.innerHTML += `<span class="bg-purple-50 text-purple-700 px-2 py-1 rounded text-xs border border-purple-100 flex items-center">${sub} <button onclick="admin.delGlobalSub(${i})" class="ml-2 hover:text-red-500">×</button></span>`;
                 });
                 
                 const ssList = document.getElementById('list-s-specific');
                 ssList.innerHTML = '';
-                s.classes.forEach(cls => {
+                (s.classes || []).forEach(cls => {
                     const specs = s.class_subjects?.[cls] || [];
                     let h = `<div class="bg-white p-3 rounded-lg border border-slate-200 mb-2"><div class="flex justify-between mb-2"><span class="font-bold text-sm">${cls}</span><button onclick="admin.addSpecSub('${cls}')" class="text-xs text-blue-600">+ Add</button></div><div class="flex flex-wrap gap-1">`;
                     if(specs.length===0) h+= `<span class="text-xs text-slate-400">Default Only</span>`;
@@ -729,12 +727,20 @@
                 if(confirm("Delete Class?")) { window.state.school.classes.splice(i,1); await saveConfig(); admin.renderAll(); }
             },
             addGlobalSub: async () => {
-                const s = document.getElementById('new-s-global').value.toUpperCase();
-                if(s && !window.state.school.subjects.includes(s)) {
+                const s = document.getElementById('new-s-global').value.trim().toUpperCase();
+                if(!s) return;
+                
+                // Initialize if missing to prevent errors
+                if(!window.state.school.subjects) window.state.school.subjects = [];
+
+                if(!window.state.school.subjects.includes(s)) {
                     window.state.school.subjects.push(s);
                     await saveConfig();
                     document.getElementById('new-s-global').value = '';
                     admin.renderAll();
+                    toast("Subject Added");
+                } else {
+                    toast("Subject Exists");
                 }
             },
             delGlobalSub: async (i) => {
