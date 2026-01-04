@@ -764,34 +764,13 @@
                              const recs = snap.data().records;
                              let p=0, a=0, l=0, sl=0;
                              
-                             // Calculate daily totals based on subject attendance
+                             // Hierarchy Logic: P > SL > L > A
                              Object.values(recs).forEach(r => {
-                                 // Check if subject array or direct status
                                  const vals = Object.values(r);
-                                 // Simple logic: if any P then Present? No, we count subject slots.
-                                 // Admin Dashboard wants overview. Let's count avg status?
-                                 // Actually better: Count unique students present vs absent vs leave
-                                 
-                                 // Revised Logic for Dashboard:
-                                 // If student has mostly P -> Present
-                                 // If mostly A -> Absent
-                                 // But dashboard columns are simple numbers.
-                                 // Let's count SLOTS.
-                                 // Wait, dashboard usually wants headcount.
-                                 
-                                 let sP=0, sA=0, sL=0, sSL=0;
-                                 vals.forEach(v => {
-                                     if(v==='P') sP++;
-                                     else if(v==='A') sA++;
-                                     else if(v==='L') sL++;
-                                     else if(v==='S/L') sSL++;
-                                 });
-                                 
-                                 // Determine student status for the day
-                                 if (sP > 0) p++; 
-                                 else if (sSL > 0) sl++;
-                                 else if (sL > 0) l++;
-                                 else if (sA > 0) a++;
+                                 if(vals.includes('P')) p++;
+                                 else if(vals.includes('S/L')) sl++;
+                                 else if(vals.includes('L')) l++;
+                                 else if(vals.includes('A')) a++;
                              });
                              
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td><td class="text-center text-orange-500 font-bold">${sl}</td>`;
@@ -888,7 +867,8 @@
             init: () => {
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
-                document.getElementById('view-teacher-attendance').classList.remove('hidden');
+                // Use correct ID for wrapper
+                document.getElementById('view-teacher-wrapper').classList.remove('hidden');
                 
                 // Header
                 document.getElementById('header-title').innerText = window.state.currentClass;
@@ -909,6 +889,8 @@
                     if(!document.getElementById('tab-content-report').classList.contains('hidden')) teacher.loadReport();
                 });
                 
+                // Initialize default tab
+                teacher.switchView('mark');
                 teacher.loadData();
             },
             
@@ -969,16 +951,10 @@
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
-                
-                // Only show active subs in columns, OR show all but dim? 
-                // Requirement: "when i deselect any subject ... it make to dim"
-                // So we render ALL columns, but style inactive ones.
+                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
                 
                 let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center sticky-col-1 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Roll</th><th class="px-4 py-3 w-40 sticky-col-2 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                subs.forEach(sub => { 
-                    const isActive = window.state.activeSubjects[sub] !== false;
-                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${isActive?'':'dimmed-col'}">${sub}</th>`; 
-                });
+                activeSubs.forEach(sub => { headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${window.state.activeSubjects[sub]?'':'dimmed-col'}">${sub}</th>`; });
                 headerHTML += `</tr>`;
                 thead.innerHTML = headerHTML;
                 list.innerHTML = '';
