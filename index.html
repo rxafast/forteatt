@@ -44,6 +44,9 @@
         /* Sticky Columns for Mobile Table */
         .sticky-col-1 { position: sticky; left: 0; z-index: 10; }
         .sticky-col-2 { position: sticky; left: 60px; z-index: 10; }
+        
+        /* Dimmed State */
+        .dimmed-col { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
     </style>
 </head>
 <body class="bg-background text-slate-800 h-screen flex flex-col overflow-hidden font-sans">
@@ -177,50 +180,100 @@
             <!-- MAIN SCROLLABLE AREA -->
             <main class="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-6 w-full relative">
                 
-                <!-- TEACHER: ATTENDANCE VIEW -->
-                <div id="view-teacher-attendance" class="hidden max-w-6xl mx-auto">
-                    <!-- Controls -->
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 sticky top-0 z-20 space-y-3">
-                        <div class="flex flex-col md:flex-row justify-between gap-3">
-                            <div class="flex gap-2 items-center flex-wrap">
-                                <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
-                                <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
+                <!-- TEACHER: CLASS VIEW WRAPPER -->
+                <div id="view-teacher-wrapper" class="hidden max-w-6xl mx-auto flex flex-col h-full">
+                    
+                    <!-- Class Tabs -->
+                    <div class="flex space-x-1 rounded-xl bg-slate-200 p-1 mb-4 shrink-0">
+                        <button onclick="teacher.switchView('mark')" id="btn-tab-mark" class="w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow">
+                            Mark Attendance
+                        </button>
+                        <button onclick="teacher.switchView('report')" id="btn-tab-report" class="w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800">
+                            View Report
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: MARK ATTENDANCE -->
+                    <div id="tab-content-mark" class="flex-1 flex flex-col overflow-hidden">
+                        <!-- Controls -->
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 z-20 space-y-3 shrink-0">
+                            <div class="flex flex-col md:flex-row justify-between gap-3">
+                                <div class="flex gap-2 items-center flex-wrap">
+                                    <input type="date" id="att-date" class="border border-slate-300 rounded-lg px-3 py-2 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-primary/50 outline-none" onchange="teacher.loadData()">
+                                    <span id="student-count" class="text-xs font-bold bg-slate-100 px-2 py-1 rounded text-slate-600">0 Students</span>
+                                    
+                                    <!-- Mode Toggle -->
+                                    <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200 hidden">
+                                        <!-- Hidden for now based on new reqs, defaulting to subject matrix -->
+                                        <button onclick="teacher.setMode('subject')" id="btn-mode-subject" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-primary transition">Subject Wise</button>
+                                        <button onclick="teacher.setMode('daily')" id="btn-mode-daily" class="px-3 py-1 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition">Day Wise</button>
+                                    </div>
+                                </div>
+                                <div class="flex gap-2 w-full md:w-auto">
+                                    <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+                                        <i class="fas fa-user-plus"></i> Add
+                                    </button>
+                                    <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
+                                        <i class="fas fa-file-upload"></i> Import CSV
+                                        <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
+                                    </label>
+                                    <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
+                                        <i class="fas fa-save"></i> Save Attendance
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex gap-2 w-full md:w-auto">
-                                <button onclick="teacher.openAddStudentModal()" class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
-                                    <i class="fas fa-user-plus"></i> Add
-                                </button>
-                                <label class="bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 px-3 py-2 rounded-lg text-sm font-bold flex items-center gap-2 cursor-pointer">
-                                    <i class="fas fa-file-upload"></i> Import CSV
-                                    <input type="file" class="hidden" accept=".csv" onchange="teacher.importFile(this)">
-                                </label>
-                                <button onclick="teacher.save()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm flex items-center gap-2 ml-auto">
-                                    <i class="fas fa-save"></i> Save Attendance
-                                </button>
+                            
+                            <!-- Search & Filter -->
+                            <div class="space-y-2">
+                                <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()"></div>
+                                <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
+                                    <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today (Uncheck to Dim):</div>
+                                    <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
+                                        <!-- Injected by JS -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Search & Filter -->
-                        <div class="space-y-2">
-                             <div class="flex gap-2"><input type="text" id="att-search" placeholder="Search student..." class="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/50 outline-none" onkeyup="teacher.filter()"></div>
-                             <div class="bg-indigo-50 border border-indigo-100 p-2 rounded-lg">
-                                 <div class="text-[10px] uppercase font-bold text-indigo-400 mb-1">Select Subjects Taught Today:</div>
-                                 <div id="att-subjects-filter" class="flex flex-wrap gap-2 items-center">
-                                     <!-- Injected by JS -->
-                                 </div>
-                             </div>
+
+                        <!-- List (Scrollable Table) -->
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto flex-1">
+                            <table class="w-full text-left text-sm whitespace-nowrap">
+                                <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
+                                    <!-- Dynamic Headers -->
+                                </thead>
+                                <tbody id="att-list" class="divide-y divide-slate-100 text-slate-700"></tbody>
+                            </table>
                         </div>
                     </div>
 
-                    <!-- List (Scrollable Table) -->
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
-                        <table class="w-full text-left text-sm whitespace-nowrap">
-                            <thead id="att-thead" class="bg-slate-100 text-slate-600 uppercase text-xs font-bold border-b border-slate-200">
-                                <!-- Dynamic Headers -->
-                            </thead>
-                            <tbody id="att-list" class="divide-y divide-slate-100 text-slate-700"></tbody>
-                        </table>
+                    <!-- TAB 2: CLASS REPORT -->
+                    <div id="tab-content-report" class="flex-1 flex flex-col hidden overflow-hidden">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 shrink-0 flex justify-between items-center">
+                             <h2 class="font-bold text-slate-700">Monthly Attendance Report</h2>
+                             <div class="flex gap-2">
+                                 <input type="month" id="teacher-rep-month" class="border rounded px-3 py-2 text-sm" onchange="teacher.loadReport()">
+                                 <button onclick="teacher.loadReport()" class="bg-primary text-white px-4 py-2 rounded text-sm font-bold"><i class="fas fa-sync-alt mr-2"></i> Refresh</button>
+                             </div>
+                        </div>
+                        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto flex-1">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-slate-500 uppercase text-xs font-bold sticky top-0 z-10 border-b">
+                                    <tr>
+                                        <th class="px-4 py-3 w-20">Roll</th>
+                                        <th class="px-4 py-3">Name</th>
+                                        <th class="px-4 py-3 text-center">Lecture Attended</th>
+                                        <th class="px-4 py-3 text-center">Lecture %</th>
+                                        <th class="px-4 py-3 text-center">Days Present</th>
+                                        <th class="px-4 py-3 text-center">Day %</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="teacher-rep-list" class="divide-y divide-slate-100">
+                                    <tr><td colspan="6" class="p-6 text-center text-slate-400">Select a month to view report</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
+
                 </div>
 
                 <!-- ADMIN: DASHBOARD -->
@@ -711,13 +764,34 @@
                              const recs = snap.data().records;
                              let p=0, a=0, l=0, sl=0;
                              
-                             // Hierarchy Logic: P > SL > L > A
+                             // Calculate daily totals based on subject attendance
                              Object.values(recs).forEach(r => {
+                                 // Check if subject array or direct status
                                  const vals = Object.values(r);
-                                 if(vals.includes('P')) p++;
-                                 else if(vals.includes('S/L')) sl++;
-                                 else if(vals.includes('L')) l++;
-                                 else if(vals.includes('A')) a++;
+                                 // Simple logic: if any P then Present? No, we count subject slots.
+                                 // Admin Dashboard wants overview. Let's count avg status?
+                                 // Actually better: Count unique students present vs absent vs leave
+                                 
+                                 // Revised Logic for Dashboard:
+                                 // If student has mostly P -> Present
+                                 // If mostly A -> Absent
+                                 // But dashboard columns are simple numbers.
+                                 // Let's count SLOTS.
+                                 // Wait, dashboard usually wants headcount.
+                                 
+                                 let sP=0, sA=0, sL=0, sSL=0;
+                                 vals.forEach(v => {
+                                     if(v==='P') sP++;
+                                     else if(v==='A') sA++;
+                                     else if(v==='L') sL++;
+                                     else if(v==='S/L') sSL++;
+                                 });
+                                 
+                                 // Determine student status for the day
+                                 if (sP > 0) p++; 
+                                 else if (sSL > 0) sl++;
+                                 else if (sL > 0) l++;
+                                 else if (sA > 0) a++;
                              });
                              
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td><td class="text-center text-orange-500 font-bold">${sl}</td>`;
@@ -815,19 +889,42 @@
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-teacher-attendance').classList.remove('hidden');
+                
+                // Header
                 document.getElementById('header-title').innerText = window.state.currentClass;
+                
+                // Setup Date
                 const d = getLocalDate();
                 document.getElementById('att-date').value = d;
                 
+                // Setup Report Date Defaults
+                const now = new Date();
+                const mStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                document.getElementById('teacher-rep-month').value = mStr;
+
+                // Listen to class data
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
                     window.state.students = snap.exists() ? (snap.data().students || []) : [];
                     teacher.renderList();
+                    if(!document.getElementById('tab-content-report').classList.contains('hidden')) teacher.loadReport();
                 });
+                
                 teacher.loadData();
             },
             
+            switchView: (view) => {
+                document.getElementById('tab-content-mark').classList.toggle('hidden', view !== 'mark');
+                document.getElementById('tab-content-report').classList.toggle('hidden', view !== 'report');
+                
+                document.getElementById('btn-tab-mark').className = view === 'mark' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
+                document.getElementById('btn-tab-report').className = view === 'report' ? "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-primary bg-white shadow" : "w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-slate-600 hover:bg-white/[0.12] hover:text-slate-800";
+                
+                if (view === 'report') teacher.loadReport();
+            },
+
             loadData: () => {
                 const d = document.getElementById('att-date').value;
+                // Determine subjects
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
@@ -837,7 +934,7 @@
                 subs.forEach(s => {
                     if(window.state.activeSubjects[s] === undefined) window.state.activeSubjects[s] = true;
                     const active = window.state.activeSubjects[s];
-                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'}">${s}</button>`;
+                    filter.innerHTML += `<button onclick="teacher.toggleSub('${s}')" class="px-3 py-1 rounded-full text-xs font-bold border transition ${active ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-slate-100 text-slate-400 border-slate-200'} ${active ? '' : 'dimmed-col'}">${s}</button>`;
                 });
                 
                 if(window.state.dailyUnsub) window.state.dailyUnsub();
@@ -849,7 +946,7 @@
             
             toggleSub: (s) => {
                 window.state.activeSubjects[s] = !window.state.activeSubjects[s];
-                teacher.renderList(); 
+                teacher.loadData(); // Re-render pills
             },
             
             setRowStatus: (sid, status) => {
@@ -872,10 +969,16 @@
                 const glob = window.state.school.subjects || [];
                 const spec = window.state.school.class_subjects?.[window.state.currentClass] || [];
                 const subs = Array.from(new Set([...glob, ...spec]));
-                const activeSubs = subs.filter(s => window.state.activeSubjects[s] !== false);
+                
+                // Only show active subs in columns, OR show all but dim? 
+                // Requirement: "when i deselect any subject ... it make to dim"
+                // So we render ALL columns, but style inactive ones.
                 
                 let headerHTML = `<tr><th class="px-4 py-3 w-16 text-center sticky-col-1 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Roll</th><th class="px-4 py-3 w-40 sticky-col-2 bg-slate-100 border-b border-r border-slate-200 shadow-sm">Name <span class="text-[10px] text-slate-400 font-normal">(Actions)</span></th>`;
-                activeSubs.forEach(sub => { headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200">${sub}</th>`; });
+                subs.forEach(sub => { 
+                    const isActive = window.state.activeSubjects[sub] !== false;
+                    headerHTML += `<th class="px-4 py-3 text-center min-w-[160px] border-b border-slate-200 ${isActive?'':'dimmed-col'}">${sub}</th>`; 
+                });
                 headerHTML += `</tr>`;
                 thead.innerHTML = headerHTML;
                 list.innerHTML = '';
@@ -901,20 +1004,23 @@
                                     <div class="flex gap-1 ml-2">
                                         <button onclick="teacher.setRowStatus('${s.id}', 'P')" class="text-[10px] bg-green-50 text-green-600 px-1.5 py-0.5 rounded border border-green-200 hover:bg-green-100" title="All P">P</button>
                                         <button onclick="teacher.setRowStatus('${s.id}', 'A')" class="text-[10px] bg-red-50 text-red-600 px-1.5 py-0.5 rounded border border-red-200 hover:bg-red-100" title="All A">A</button>
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200 hover:bg-yellow-100" title="All Leave">L</button>
-                                        <button onclick="teacher.setRowStatus('${s.id}', 'S/L')" class="text-[10px] bg-orange-50 text-orange-600 px-1.5 py-0.5 rounded border border-orange-200 hover:bg-orange-100" title="All Short Leave">SL</button>
+                                        <button onclick="teacher.setRowStatus('${s.id}', 'L')" class="text-[10px] bg-yellow-50 text-yellow-600 px-1.5 py-0.5 rounded border border-yellow-200 hover:bg-yellow-100" title="All L">L</button>
                                     </div>
                                 </div>
                             </td>`;
                         const rec = window.state.attendance[s.id] || {};
-                        activeSubs.forEach(sub => {
-                            const status = rec[sub] || 'P'; 
-                            row += `<td class="px-4 py-2 text-center"><div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
-                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
-                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
-                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
-                                <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
-                            </div></td>`;
+                        subs.forEach(sub => {
+                            const isActive = window.state.activeSubjects[sub] !== false;
+                            const status = rec[sub] || (isActive ? 'P' : '-'); 
+                            
+                            row += `<td class="px-4 py-2 text-center ${isActive?'':'dimmed-col'}">
+                                <div class="flex border border-slate-200 rounded w-full max-w-[180px] mx-auto shadow-sm">
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'P')" class="${getBtnClass('P', status)}">P</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'A')" class="${getBtnClass('A', status)}">A</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'L')" class="${getBtnClass('L', status)}">L</button>
+                                    <button onclick="teacher.setStatus('${s.id}', '${sub}', 'S/L')" class="${getBtnClass('S/L', status)}">SL</button>
+                                </div>
+                            </td>`;
                         });
                         row += `</tr>`;
                         list.innerHTML += row;
@@ -952,6 +1058,68 @@
             
             filter: () => teacher.renderList(),
             
+            // --- CLASS REPORT LOGIC ---
+            loadReport: async () => {
+                const tbody = document.getElementById('teacher-rep-list');
+                const m = document.getElementById('teacher-rep-month').value;
+                const cls = window.state.currentClass;
+                
+                if(!m) return;
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Calculating...</td></tr>';
+                
+                const [y, mm] = m.split('-');
+                const days = new Date(y, mm, 0).getDate();
+                const atts = {};
+                
+                // Fetch all days
+                await Promise.all(Array.from({length:days}, (_,i) => {
+                    const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                    return getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`))
+                        .then(s => atts[d] = s.exists() ? s.data().records : {});
+                }));
+                
+                tbody.innerHTML = '';
+                
+                window.state.students.forEach(s => {
+                    let totalLec=0, totalP=0, daysPresent=0, daysTotal=0;
+                    
+                    for(let i=1; i<=days; i++) {
+                        const d = `${y}-${mm}-${String(i+1).padStart(2,'0')}`;
+                        const rec = atts[d]?.[s.id];
+                        if(rec) {
+                            let dayHasP = false;
+                            Object.values(rec).forEach(val => {
+                                if(val !== '-') {
+                                    totalLec++;
+                                    if(val === 'P') { totalP++; dayHasP = true; }
+                                    // S/L counts as P for day presence? Usually yes, or half. Assuming P logic for now.
+                                    if(val === 'S/L') dayHasP = true; 
+                                }
+                            });
+                            // If any subject was recorded, day counts as conducted
+                            if(Object.values(rec).some(v => v !== '-')) {
+                                daysTotal++;
+                                if(dayHasP) daysPresent++;
+                            }
+                        }
+                    }
+                    
+                    const lecPct = totalLec > 0 ? Math.round((totalP/totalLec)*100) : 0;
+                    const dayPct = daysTotal > 0 ? Math.round((daysPresent/daysTotal)*100) : 0;
+                    
+                    tbody.innerHTML += `
+                        <tr class="border-b border-slate-50 hover:bg-slate-50">
+                            <td class="px-4 py-3 font-mono font-bold text-slate-600">${s.rollNo}</td>
+                            <td class="px-4 py-3">${s.name}</td>
+                            <td class="px-4 py-3 text-center text-slate-600">${totalP} / ${totalLec}</td>
+                            <td class="px-4 py-3 text-center font-bold ${lecPct<75?'text-red-500':'text-green-600'}">${lecPct}%</td>
+                            <td class="px-4 py-3 text-center text-slate-600">${daysPresent} / ${daysTotal}</td>
+                            <td class="px-4 py-3 text-center font-bold text-blue-600">${dayPct}%</td>
+                        </tr>
+                    `;
+                });
+            },
+
             openAddStudentModal: () => {
                 window.state.editingStudentIdx = null;
                 document.getElementById('modal-student-title').innerText = "Add Student";
