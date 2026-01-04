@@ -279,6 +279,9 @@
                         </div>
                         <button onclick="admin.addTeacher()" class="bg-primary text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-indigo-700 transition">Create Teacher</button>
                     </div>
+                    <div class="bg-indigo-50 border border-indigo-100 p-3 rounded text-xs text-indigo-700 mb-4">
+                        <i class="fas fa-info-circle mr-1"></i> To manage passwords, use the "Reset Pass" button to send an email, or manually set it in the <a href="https://console.firebase.google.com" target="_blank" class="underline font-bold">Firebase Console</a>.
+                    </div>
                     <div id="list-teachers" class="space-y-3"></div>
                 </div>
 
@@ -416,6 +419,11 @@
             try {
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', 'school_data'), window.state.school);
             } catch(e) { console.error(e); toast("Save failed: " + e.message); }
+        };
+
+        const getLocalDate = () => {
+            const now = new Date();
+            return new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
         };
 
         // --- UI CONTROLLERS ---
@@ -680,7 +688,7 @@
             
             initLive: () => {
                 const tbody = document.getElementById('live-table-body');
-                const d = document.getElementById('live-date').value || new Date().toISOString().split('T')[0];
+                const d = document.getElementById('live-date').value || getLocalDate();
                 if (document.getElementById('live-date').value === '') document.getElementById('live-date').value = d;
                 
                 tbody.innerHTML = '';
@@ -702,13 +710,16 @@
                          if(snap.exists()) {
                              const recs = snap.data().records;
                              let p=0, a=0, l=0, sl=0;
+                             
+                             // Hierarchy Logic: P > SL > L > A
                              Object.values(recs).forEach(r => {
                                  const vals = Object.values(r);
                                  if(vals.includes('P')) p++;
+                                 else if(vals.includes('S/L')) sl++;
                                  else if(vals.includes('L')) l++;
                                  else if(vals.includes('A')) a++;
-                                 else if(vals.includes('S/L')) sl++;
                              });
+                             
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td class="text-center text-green-600 font-bold">${p}</td><td class="text-center text-red-600 font-bold">${a}</td><td class="text-center text-yellow-600 font-bold">${l}</td><td class="text-center text-orange-500 font-bold">${sl}</td>`;
                          } else {
                              el.innerHTML = `<td class="px-6 py-3 font-bold">${cls}</td><td colspan="4" class="text-center text-xs text-slate-400">Pending</td>`;
@@ -805,7 +816,7 @@
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('view-teacher-attendance').classList.remove('hidden');
                 document.getElementById('header-title').innerText = window.state.currentClass;
-                const d = new Date().toISOString().split('T')[0];
+                const d = getLocalDate();
                 document.getElementById('att-date').value = d;
                 
                 onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), snap => {
@@ -933,7 +944,7 @@
                     });
                 });
                 
-                await setDoc(ref, { date: d, records: finalData });
+                await setDoc(ref, { date: d, records: finalData }, {merge: true});
                 toast("Attendance Saved!");
             },
             
