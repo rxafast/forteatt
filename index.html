@@ -138,6 +138,11 @@
                 <button onclick="ui.toggleSidebar()" class="md:hidden text-slate-500 hover:text-slate-700 p-2 rounded-md focus:bg-slate-100">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
+
+                <!-- NEW: Back Button for Admin View Mode -->
+                <button id="btn-admin-back" onclick="admin.exitClassView()" class="hidden text-slate-500 hover:text-primary p-2 rounded-md hover:bg-slate-50 transition-colors font-medium text-sm flex items-center gap-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </button>
                 
                 <div class="w-8 h-8 rounded-lg bg-primary text-white flex items-center justify-center font-bold text-lg shrink-0">F</div>
                 <div>
@@ -155,7 +160,7 @@
         <!-- Content Area -->
         <div class="flex-1 overflow-hidden relative flex">
             
-            <!-- ADMIN SIDEBAR (Fix: Added overflow-y-auto) -->
+            <!-- ADMIN SIDEBAR -->
             <aside id="admin-sidebar" class="hidden w-64 bg-slate-900 text-slate-300 flex-col border-r border-slate-800 absolute md:relative z-40 h-full transition-transform transform md:translate-x-0 -translate-x-full overflow-y-auto">
                 <div class="p-4 border-b border-slate-800 mb-2 flex justify-between items-center md:hidden sticky top-0 bg-slate-900 z-10">
                     <span class="font-bold text-white">Menu</span>
@@ -352,6 +357,7 @@
                         <input type="text" id="new-c-name" placeholder="e.g. ICS-A" class="border rounded-lg p-2.5 text-sm uppercase w-full md:w-64">
                         <button onclick="admin.addClass()" class="bg-green-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold hover:bg-green-700">Add Class</button>
                     </div>
+                    <div class="text-xs text-slate-400 mb-2">Use arrows to arrange class order for Live Feed and Dropdowns.</div>
                     <div id="list-classes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
                 </div>
 
@@ -604,8 +610,17 @@
                 const cList = document.getElementById('list-classes');
                 cList.innerHTML = '';
                 (s.classes || []).forEach((c, i) => {
-                    cList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center">
-                        <span class="font-bold">${c}</span>
+                    const isFirst = i === 0;
+                    const isLast = i === (s.classes.length - 1);
+                    
+                    cList.innerHTML += `<div class="bg-white p-3 rounded-lg border border-slate-200 flex justify-between items-center group">
+                        <div class="flex items-center gap-2">
+                            <div class="flex flex-col gap-0.5 opacity-50 group-hover:opacity-100 transition-opacity">
+                                <button onclick="admin.moveClass(${i}, -1)" class="text-[10px] hover:text-primary ${isFirst ? 'invisible' : ''}"><i class="fas fa-chevron-up"></i></button>
+                                <button onclick="admin.moveClass(${i}, 1)" class="text-[10px] hover:text-primary ${isLast ? 'invisible' : ''}"><i class="fas fa-chevron-down"></i></button>
+                            </div>
+                            <span class="font-bold">${c}</span>
+                        </div>
                         <div class="flex gap-2">
                              <button onclick="admin.viewClass('${c}')" class="text-xs bg-green-50 text-green-600 px-2 py-1 rounded">View</button>
                              <button onclick="admin.delClass(${i})" class="text-xs text-red-500 px-2 py-1"><i class="fas fa-trash"></i></button>
@@ -723,6 +738,20 @@
                     admin.renderAll();
                 }
             },
+            
+            // NEW: Move Class Function
+            moveClass: async (index, direction) => {
+                const classes = window.state.school.classes;
+                const newIndex = index + direction;
+
+                if (newIndex >= 0 && newIndex < classes.length) {
+                    // Swap
+                    [classes[index], classes[newIndex]] = [classes[newIndex], classes[index]];
+                    await saveConfig();
+                    admin.renderAll();
+                }
+            },
+
             delClass: async (i) => {
                 if(confirm("Delete Class?")) { window.state.school.classes.splice(i,1); await saveConfig(); admin.renderAll(); }
             },
@@ -813,9 +842,33 @@
                 document.getElementById('view-app').classList.remove('hidden');
                 document.getElementById('view-login').classList.add('hidden');
                 document.getElementById('admin-sidebar').classList.add('hidden'); 
+                
+                // Show Back Button
+                document.getElementById('btn-admin-back').classList.remove('hidden');
+                
                 document.getElementById('header-title').innerText = cls;
                 document.getElementById('header-subtitle').innerText = "Admin View Mode";
                 window.teacher.init(); 
+            },
+
+            // NEW: Exit Class View
+            exitClassView: () => {
+                document.getElementById('view-teacher-wrapper').classList.add('hidden');
+                document.getElementById('admin-sidebar').classList.remove('hidden');
+                document.getElementById('admin-sidebar').classList.add('flex');
+                
+                // Hide Back Button
+                document.getElementById('btn-admin-back').classList.add('hidden');
+
+                document.getElementById('header-title').innerText = "Admin Console";
+                document.getElementById('header-subtitle').innerText = "Management";
+                
+                // Reset state to ensure clean switch
+                window.state.currentClass = null;
+                // Unsubscribe from teacher listeners if any
+                if(window.state.dailyUnsub) { window.state.dailyUnsub(); window.state.dailyUnsub = null; }
+                
+                admin.init();
             },
             
             // DOWNLOADS
@@ -864,7 +917,54 @@
             },
             
             dlDaily: async () => {
-                alert("Generating...");
+                const d = document.getElementById('rep-day-date').value;
+                if(!d) return alert("Select Date");
+                
+                toast("Generating Report...");
+                
+                const classes = window.state.school.classes || [];
+                let csv = "Class,Total Students,Present,Absent,Leave,Short Leave,Attendance %\n";
+                
+                try {
+                    const promises = classes.map(async (cls) => {
+                        try {
+                            const snap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${cls}_${d}`));
+                            
+                            if(snap.exists()) {
+                                const recs = snap.data().records || {};
+                                const total = Object.keys(recs).length;
+                                let p=0, a=0, l=0, sl=0;
+                                
+                                Object.values(recs).forEach(r => {
+                                    const vals = Object.values(r);
+                                    if(vals.includes('P')) p++;
+                                    else if(vals.includes('S/L')) sl++;
+                                    else if(vals.includes('L')) l++;
+                                    else if(vals.includes('A')) a++;
+                                });
+                                
+                                const pct = total > 0 ? Math.round((p/total)*100) : 0;
+                                return `${cls},${total},${p},${a},${l},${sl},${pct}%`;
+                            } else {
+                                return `${cls},-,Not Marked,-,-,-,-`;
+                            }
+                        } catch (err) {
+                            console.error(`Error fetching ${cls}:`, err);
+                            return `${cls},Error,Error,-,-,-,-`;
+                        }
+                    });
+                    
+                    const rows = await Promise.all(promises);
+                    csv += rows.join('\n');
+                    
+                    const b = new Blob([csv], {type:'text/csv'});
+                    const u = URL.createObjectURL(b);
+                    const a = document.createElement('a'); a.href=u; a.download=`Daily_Summary_${d}.csv`; a.click();
+                    toast("Download Started");
+                } catch (e) {
+                    console.error(e);
+                    alert("Error generating report: " + e.message);
+                }
             },
             
             backupData: async () => {
@@ -1284,17 +1384,35 @@
                 r.onload = async (e) => {
                     const lines = e.target.result.split('\n');
                     let count = 0;
+                    let skipped = 0;
+                    const newStudents = [];
+
                     lines.forEach(l => {
                         const [roll, name] = l.split(',');
                         if(roll && name) {
-                            window.state.students.push({id: Date.now()+Math.random().toString(), rollNo: roll.trim(), name: name.trim()});
-                            count++;
+                            const cleanRoll = roll.trim();
+                            const cleanName = name.trim();
+                            
+                            // Check for duplicates
+                            const exists = window.state.students.some(s => s.rollNo === cleanRoll);
+                            if (!exists) {
+                                newStudents.push({id: Date.now()+Math.random().toString(), rollNo: cleanRoll, name: cleanName});
+                                count++;
+                            } else {
+                                skipped++;
+                            }
                         }
                     });
+
                     if(count > 0) {
+                        // Merge and Sort to ensure order is kept
+                        window.state.students = [...window.state.students, ...newStudents].sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric:true}));
+                        
                         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'classes', window.state.currentClass), {students: window.state.students}, {merge:true});
                         teacher.renderList();
-                        toast(`Imported ${count} students`);
+                        toast(`Imported ${count}. Skipped ${skipped} duplicates.`);
+                    } else if (skipped > 0) {
+                        toast(`No new students. Skipped ${skipped} duplicates.`);
                     }
                     input.value = '';
                 };
@@ -1340,3 +1458,4 @@
     </script>
 </body>
 </html>
+
